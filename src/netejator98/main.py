@@ -9,6 +9,18 @@ import signal
 import sys
 import time
 
+# Ensure UTF-8 output encoding with safe replacement on non-UTF-8 consoles (e.g. Windows cp1252)
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 from netejator98.composition_root import (
     create_admin_app,
     create_agent,
@@ -138,10 +150,10 @@ def main() -> None:
 
             v = VerifyChainIntegrityUseCase(repo).execute()
             if v.is_valid:
-                print(f"✓ Hash chain integrity VALID. Total records verified: {v.total_entries}")
+                print(f"[OK] Hash chain integrity VALID. Total records verified: {v.total_entries}")
                 sys.exit(0)
             else:
-                print(f"✗ Hash chain TAMPERING DETECTED at sequence {v.tampered_seq}!")
+                print(f"[FAIL] Hash chain TAMPERING DETECTED at sequence {v.tampered_seq}!")
                 print(f"  Reason: {v.failure_reason}")
                 sys.exit(1)
         elif storage_path and (storage_path / "audit_trail.jsonl").exists():
@@ -151,10 +163,10 @@ def main() -> None:
             repo = EncryptedJsonlAuditRepository(storage_dir=storage_path)
             v = VerifyChainIntegrityUseCase(repo).execute()
             if v.is_valid:
-                print(f"✓ Hash chain integrity VALID. Total records verified: {v.total_entries}")
+                print(f"[OK] Hash chain integrity VALID. Total records verified: {v.total_entries}")
                 sys.exit(0)
             else:
-                print(f"✗ Hash chain TAMPERING DETECTED at sequence {v.tampered_seq}!")
+                print(f"[FAIL] Hash chain TAMPERING DETECTED at sequence {v.tampered_seq}!")
                 print(f"  Reason: {v.failure_reason}")
                 sys.exit(1)
         else:
@@ -164,10 +176,10 @@ def main() -> None:
             if res.is_ok():
                 v = res.unwrap()
                 if v.get("is_valid"):
-                    print(f"✓ Hash chain integrity VALID. Total records verified: {v.get('total_entries', 0)}")
+                    print(f"[OK] Hash chain integrity VALID. Total records verified: {v.get('total_entries', 0)}")
                     sys.exit(0)
                 else:
-                    print(f"✗ Hash chain TAMPERING DETECTED at sequence {v.get('tampered_seq')}!")
+                    print(f"[FAIL] Hash chain TAMPERING DETECTED at sequence {v.get('tampered_seq')}!")
                     print(f"  Reason: {v.get('failure_reason')}")
                     sys.exit(1)
             else:

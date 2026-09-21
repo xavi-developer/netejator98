@@ -21,6 +21,18 @@ import shutil
 import subprocess
 import sys
 
+# Ensure UTF-8 output encoding with safe replacement on non-UTF-8 consoles (e.g. Windows cp1252)
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 
 def print_banner(text: str) -> None:
     print(f"\n{'=' * 60}")
@@ -40,7 +52,7 @@ def check_python_version() -> None:
 def ensure_pyinstaller() -> None:
     try:
         import PyInstaller  # noqa: F401
-        print("✓ PyInstaller is available.")
+        print("[OK] PyInstaller is available.")
     except ImportError:
         print("[*] PyInstaller not found. Installing PyInstaller...")
         pip_cmd = [sys.executable, "-m", "pip", "install", "pyinstaller"]
@@ -50,12 +62,12 @@ def ensure_pyinstaller() -> None:
             pip_cmd.append("--break-system-packages")
         try:
             subprocess.check_call(pip_cmd)
-            print("✓ PyInstaller installed successfully.")
+            print("[OK] PyInstaller installed successfully.")
         except subprocess.CalledProcessError as e:
             # Retry without break-system-packages if it failed
             try:
                 subprocess.check_call([sys.executable, "-m", "pip", "install", "--user", "pyinstaller"])
-                print("✓ PyInstaller installed to user site-packages.")
+                print("[OK] PyInstaller installed to user site-packages.")
             except subprocess.CalledProcessError:
                 print(f"Error: Failed to install PyInstaller: {e}", file=sys.stderr)
                 print("Please install it manually: pip install pyinstaller", file=sys.stderr)
@@ -77,7 +89,7 @@ def build_executable(repo_root: Path, clean: bool = False, test: bool = True) ->
         print("[*] Cleaning build artifacts...")
         if build_dir.exists():
             shutil.rmtree(build_dir, ignore_errors=True)
-        print("✓ Build artifacts cleaned.")
+        print("[OK] Build artifacts cleaned.")
 
     print_banner(f"Building Netejator98 standalone binary for {platform.system()} ({machine})")
 
@@ -119,13 +131,13 @@ def build_executable(repo_root: Path, clean: bool = False, test: bool = True) ->
                 timeout=15,
             )
             if smoke_proc.returncode == 0:
-                print("✓ Binary self-test passed: executable runs and displays help successfully!")
+                print("[OK] Binary self-test passed: executable runs and displays help successfully!")
             else:
-                print(f"⚠️ Warning: Binary exited with code {smoke_proc.returncode}")
+                print(f"[!] Warning: Binary exited with code {smoke_proc.returncode}")
                 if smoke_proc.stderr:
                     print(smoke_proc.stderr)
         except Exception as e:
-            print(f"⚠️ Smoke test could not be completed: {e}")
+            print(f"[!] Smoke test could not be completed: {e}")
 
     return output_binary
 
@@ -155,15 +167,15 @@ def main() -> None:
     print("\nNext steps:")
     system = platform.system().lower()
     if system == "windows":
-        print("  • Run directly:       .\\dist\\netejator98.exe admin")
-        print("  • Deploy service:     .\\packaging\\windows\\install-service.ps1")
-        print("  • Deploy logon task:  .\\packaging\\windows\\setup-logon-task.ps1")
+        print("  * Run directly:       .\\dist\\netejator98.exe admin")
+        print("  * Deploy service:     .\\packaging\\windows\\install-service.ps1")
+        print("  * Deploy logon task:  .\\packaging\\windows\\setup-logon-task.ps1")
     elif system == "darwin":
-        print("  • Run directly:       ./dist/netejator98 admin")
-        print("  • Deploy agent:       sudo ./packaging/macos/install.sh")
+        print("  * Run directly:       ./dist/netejator98 admin")
+        print("  * Deploy agent:       sudo ./packaging/macos/install.sh")
     else:
-        print("  • Run directly:       ./dist/netejator98 admin")
-        print("  • Deploy agent:       sudo ./packaging/linux/install.sh")
+        print("  * Run directly:       ./dist/netejator98 admin")
+        print("  * Deploy agent:       sudo ./packaging/linux/install.sh")
 
 
 if __name__ == "__main__":
