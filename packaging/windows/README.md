@@ -10,13 +10,16 @@ PyInstaller no és un compilador creuat (*cross-compiler*): necessita executar-s
 
 Per generar el binari `.exe` des d'una màquina Ubuntu, disposes de tres vies:
 
-### Opció A: GitHub Actions (Recomanat - 100% Natiu)
-El projecte ja disposa d'un workflow automàtic a `.github/workflows/build-binaries.yml`.
-1. Fes push del codi a GitHub (`git push`).
-2. A GitHub, ves a la pestanya **Actions** -> **Build Cross-Platform Standalone Binaries**.
-3. Prem **Run workflow** (o crea un tag de versió tipus `v0.1.0`).
-4. GitHub compilarà el projecte en un entorn Windows natiu (`windows-latest`) i podràs descarregar directament l'arxiu:
-   `netejator98-windows-x64.exe`
+### Opció A: GitHub Actions & Releases (Recomanat - Descàrrega directa)
+El projecte disposa d'un workflow automàtic a `.github/workflows/build-binaries.yml` que compila i publica els executables directament a **GitHub Releases**.
+
+Pots descarregar el binari compilat de Windows directament amb qualsevol navegador o des de PowerShell amb aquesta URL pública:
+```powershell
+Invoke-WebRequest -Uri "https://github.com/xavi-developer/netejator98/releases/latest/download/netejator98-windows-x64.exe" -OutFile "netejator98.exe"
+```
+Per forçar una nova compilació:
+1. Fes push a la branca `main` o crea un tag (`git tag v1.0.0 && git push origin v1.0.0`).
+2. O ves a la pestanya **Actions** -> **Build Cross-Platform Standalone Binaries** -> **Run workflow**.
 
 ### Opció B: Utilitzant Wine directament a Ubuntu
 Pots instal·lar l'emulador Wine i l'intèrpret oficial de Python per a Windows:
