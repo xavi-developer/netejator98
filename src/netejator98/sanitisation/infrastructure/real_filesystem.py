@@ -138,10 +138,7 @@ class RealFileSystem(FileSystemPort):
 
 
     def find_matching_paths(self, base_path: str, pattern: str) -> List[str]:
-        if not os.path.exists(base_path):
-            return []
-
-        full_pattern = os.path.join(base_path, pattern)
+        full_pattern = os.path.join(base_path, pattern) if pattern else base_path
         try:
             matches = glob.glob(full_pattern, recursive=True)
             return [os.path.normpath(m) for m in matches]

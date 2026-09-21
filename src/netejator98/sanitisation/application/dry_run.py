@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Tuple
 from netejator98.sanitisation.application.build_plan import (
     BuildSanitisationPlanUseCase,
 )
+from netejator98.sanitisation.application.logger import SanitisationTracer
 from netejator98.sanitisation.application.ports import FileSystemPort, PlatformPathsPort
 from netejator98.sanitisation.domain.outcome import (
     SanitisationOutcome,
@@ -36,7 +37,12 @@ class DryRunUseCase:
         start_time = time.monotonic()
         now = self._clock.now_utc()
 
-        plan = self._builder.execute(policy)
+        tracer = SanitisationTracer(enabled=getattr(policy, "thorough_logging", False))
+        if tracer.enabled:
+            current_os = self._builder._resolve_platform()
+            tracer.log_header(mode="DRY-RUN (Simulation)", user_email=user_email, platform_name=current_os)
+
+        plan = self._builder.execute(policy, tracer=tracer)
 
         # Aggregate plan items by target
         target_counts: Dict[str, int] = {}
@@ -52,6 +58,17 @@ class DryRunUseCase:
             target_counts[item.target_name] += 1
             target_bytes[item.target_name] += item.estimated_bytes
 
+            if tracer.enabled:
+                tracer.log_action(
+                    action="SIMULATE",
+                    path=item.path,
+                    target_name=item.target_name,
+                    strategy=item.strategy.value,
+                    is_dir=item.is_directory,
+                    size_bytes=item.estimated_bytes,
+                    success=True,
+                )
+
         target_results: List[TargetResult] = []
         for t_name in targets_seen:
             target_results.append(
@@ -66,6 +83,15 @@ class DryRunUseCase:
 
         duration = time.monotonic() - start_time
 
+        if tracer.enabled:
+            tracer.log_summary(
+                total_files=plan.total_items,
+                total_bytes=plan.total_estimated_bytes,
+                elapsed_seconds=duration,
+                is_success=True,
+                errors=[],
+            )
+
         return SanitisationOutcome(
             timestamp=now,
             user_email=user_email,
@@ -76,5 +102,6 @@ class DryRunUseCase:
             bytes_freed=plan.total_estimated_bytes,
             errors=(),
             duration_seconds=duration,
+            log_file_path=tracer.log_file_path if tracer.enabled else None,
         )
 

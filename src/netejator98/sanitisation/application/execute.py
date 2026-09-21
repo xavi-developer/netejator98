@@ -9,6 +9,7 @@ from typing import Dict, List, Optional, Tuple
 from netejator98.sanitisation.application.build_plan import (
     BuildSanitisationPlanUseCase,
 )
+from netejator98.sanitisation.application.logger import SanitisationTracer
 from netejator98.sanitisation.application.ports import (
     CredentialStorePort,
     FileSystemPort,
@@ -61,20 +62,29 @@ class ExecuteSanitisationUseCase:
         start_time = time.monotonic()
         now = self._clock.now_utc()
 
+        tracer = SanitisationTracer(enabled=getattr(policy, "thorough_logging", False))
+        if tracer.enabled:
+            current_os = self._builder._resolve_platform()
+            tracer.log_header(mode="REAL EXECUTION (Deletion)", user_email=user_email, platform_name=current_os)
+
         self._event_bus.publish(
             SanitisationRequested(user_email=user_email, dry_run=False, timestamp=now)
         )
 
         # 1. Close active locking applications if process port is provided
         if self._process is not None:
+            if tracer.enabled:
+                tracer.log("Terminating active locking applications (browsers)...")
             self._process.terminate_processes_for_target(TargetCategory.BROWSER_PROFILES)
 
         # 2. Clear credentials if credential port is provided
         if self._credential is not None:
+            if tracer.enabled:
+                tracer.log("Clearing saved user credentials...")
             self._credential.clear_user_credentials()
 
         # 3. Build deletion plan
-        plan = self._builder.execute(policy)
+        plan = self._builder.execute(policy, tracer=tracer)
 
         target_deleted_counts: Dict[str, int] = {}
         target_bytes_freed: Dict[str, int] = {}
@@ -102,6 +112,8 @@ class ExecuteSanitisationUseCase:
                     err_msg = f"Runtime safety invariant violation: {item.path} overlaps protected path {rule.path}"
                     target_errors[t_name].append(err_msg)
                     all_errors.append(err_msg)
+                    if tracer.enabled:
+                        tracer.log(f"[BLOCKED] {err_msg}", level="WARN")
                     break
 
             if is_prohibited:
@@ -135,10 +147,31 @@ class ExecuteSanitisationUseCase:
                 target_bytes_freed[t_name] += item.estimated_bytes
                 total_files_deleted += 1
                 total_bytes_freed += item.estimated_bytes
+                if tracer.enabled:
+                    tracer.log_action(
+                        action="DELETE",
+                        path=item.path,
+                        target_name=item.target_name,
+                        strategy=item.strategy.value,
+                        is_dir=item.is_directory,
+                        size_bytes=item.estimated_bytes,
+                        success=True,
+                    )
             else:
                 err_msg = f"Failed to delete {item.path}: {last_err}"
                 target_errors[t_name].append(err_msg)
                 all_errors.append(err_msg)
+                if tracer.enabled:
+                    tracer.log_action(
+                        action="DELETE",
+                        path=item.path,
+                        target_name=item.target_name,
+                        strategy=item.strategy.value,
+                        is_dir=item.is_directory,
+                        size_bytes=item.estimated_bytes,
+                        success=False,
+                        error=last_err,
+                    )
 
         # 5. Compile outcome
         target_results: List[TargetResult] = []
@@ -155,6 +188,16 @@ class ExecuteSanitisationUseCase:
             )
 
         duration = time.monotonic() - start_time
+
+        if tracer.enabled:
+            tracer.log_summary(
+                total_files=total_files_deleted,
+                total_bytes=total_bytes_freed,
+                elapsed_seconds=duration,
+                is_success=(len(all_errors) == 0),
+                errors=all_errors,
+            )
+
         outcome = SanitisationOutcome(
             timestamp=now,
             user_email=user_email,
@@ -165,6 +208,7 @@ class ExecuteSanitisationUseCase:
             bytes_freed=total_bytes_freed,
             errors=tuple(all_errors),
             duration_seconds=duration,
+            log_file_path=tracer.log_file_path if tracer.enabled else None,
         )
 
         if outcome.is_success:

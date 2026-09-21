@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import fnmatch
+import os
 from typing import Dict, List, Optional, Set, Tuple
 
 from netejator98.sanitisation.application.ports import (
@@ -123,10 +124,14 @@ class FakeFileSystemPort(FileSystemPort):
 
 
     def find_matching_paths(self, base_path: str, pattern: str) -> List[str]:
+        full_pattern = os.path.join(base_path, pattern) if pattern else base_path
+        norm_full = self._norm(full_pattern)
         norm_base = self._norm(base_path)
         matched: List[str] = []
         for p in self.files:
-            if p.startswith(norm_base):
+            if fnmatch.fnmatch(p, norm_full):
+                matched.append(p)
+            elif pattern and p.startswith(norm_base):
                 rel = p[len(norm_base):].lstrip("/")
                 if fnmatch.fnmatch(rel, pattern.lower()) or fnmatch.fnmatch(p, pattern.lower()):
                     matched.append(p)

@@ -61,6 +61,19 @@ class TestPresentationI18n(unittest.TestCase):
         self.assertEqual(t("policy_col_os"), "OS")
         self.assertEqual(t("policy_target_os"), "Operating System (OS):")
 
+    def test_policy_thorough_log_translations(self) -> None:
+        set_language("ca")
+        self.assertIn("clean_trace.log", t("policy_thorough_log"))
+        self.assertIn("exhaustiu", t("policy_thorough_log"))
+
+        set_language("es")
+        self.assertIn("clean_trace.log", t("policy_thorough_log"))
+        self.assertIn("exhaustivo", t("policy_thorough_log"))
+
+        set_language("en")
+        self.assertIn("clean_trace.log", t("policy_thorough_log"))
+        self.assertIn("Thorough", t("policy_thorough_log"))
+
 
 class TestKioskViewModel(unittest.TestCase):
     def setUp(self) -> None:
@@ -333,10 +346,15 @@ class TestPresentationWiring(unittest.TestCase):
             self.assertIn("os", kwargs["columns"])
             self.assertEqual(kwargs["columns"], ("enabled", "os", "name", "category", "strategy", "patterns", "description"))
 
+    def test_admin_view_has_thorough_log_var(self) -> None:
+        from unittest.mock import MagicMock
+        from netejator98.presentation.admin_view import AdminView
 
-
-
-class TestWin98Theme(unittest.TestCase):
+        mock_vm = MagicMock()
+        mock_parent = MagicMock()
+        av = AdminView(mock_vm, parent=mock_parent)
+        self.assertTrue(hasattr(av, "policy_thorough_log_var"))
+        self.assertIsNone(av.policy_thorough_log_var)
     def test_palette_constants(self) -> None:
         from netejator98.presentation.win98_theme import (
             WIN98_TEAL,

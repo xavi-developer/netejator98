@@ -36,15 +36,27 @@ class BuildSanitisationPlanUseCase:
         import platform
         return platform.system().lower()
 
-    def execute(self, policy: CleaningPolicy) -> SanitisationPlan:
+    def execute(self, policy: CleaningPolicy, tracer: Any = None) -> SanitisationPlan:
         user_home = self._paths.get_user_home()
         current_os = self._resolve_platform()
         target_discovered: Dict[str, List[Tuple[str, bool, int]]] = {}
 
         for target in policy.targets:
-            if not target.enabled:
-                continue
-            if hasattr(target, "applies_to_os") and not target.applies_to_os(current_os):
+            is_enabled = bool(target.enabled)
+            applies_os = True
+            if hasattr(target, "applies_to_os"):
+                applies_os = target.applies_to_os(current_os)
+
+            if tracer is not None and hasattr(tracer, "log_target_eval"):
+                tracer.log_target_eval(
+                    target.name,
+                    getattr(target.category, "value", str(target.category)),
+                    getattr(target, "os", "ALL"),
+                    is_enabled,
+                    applies_os,
+                )
+
+            if not is_enabled or not applies_os:
                 continue
 
             discovered: List[Tuple[str, bool, int]] = []
@@ -60,6 +72,9 @@ class BuildSanitisationPlanUseCase:
 
                 if pattern.is_glob():
                     matches = self._fs.find_matching_paths(base_dir, search_pat)
+                    if tracer is not None and hasattr(tracer, "log_pattern_resolution"):
+                        tracer.log_pattern_resolution(target.name, pat_str, base_dir, matches)
+
                     for m in matches:
                         if self._fs.exists(m):
                             is_dir = self._fs.is_dir(m)
@@ -71,7 +86,11 @@ class BuildSanitisationPlanUseCase:
                         if (pat_str.startswith("/") or (len(pat_str) > 2 and pat_str[1] == ":"))
                         else f"{user_home.rstrip('/')}/{pat_str.lstrip('/')}"
                     )
-                    if self._fs.exists(target_path):
+                    exists = self._fs.exists(target_path)
+                    if tracer is not None and hasattr(tracer, "log_pattern_resolution"):
+                        tracer.log_pattern_resolution(target.name, pat_str, target_path, [target_path] if exists else [])
+
+                    if exists:
                         is_dir = self._fs.is_dir(target_path)
                         size = self._fs.get_size(target_path)
                         discovered.append((target_path, is_dir, size))
@@ -83,5 +102,6 @@ class BuildSanitisationPlanUseCase:
             policy=policy,
             user_profile_root=user_home,
             target_discovered_paths=target_discovered,
+            tracer=tracer,
         )
 

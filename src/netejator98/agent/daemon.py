@@ -728,6 +728,7 @@ class AgentDaemon:
                 "bytes_freed": outcome.bytes_freed,
                 "targets": list(outcome.targets_processed),
                 "errors": list(outcome.errors),
+                "log_file_path": outcome.log_file_path,
             }
         )
 

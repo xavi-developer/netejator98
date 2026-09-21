@@ -31,6 +31,7 @@ class SanitisationOutcome:
     bytes_freed: int
     errors: Tuple[str, ...]
     duration_seconds: float
+    log_file_path: Optional[str] = None
 
     @property
     def is_success(self) -> bool:

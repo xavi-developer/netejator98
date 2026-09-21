@@ -18,6 +18,7 @@ class SanitisationPlanner:
         policy: CleaningPolicy,
         user_profile_root: str,
         target_discovered_paths: Dict[str, List[Tuple[str, bool, int]]],  # (path, is_dir, bytes)
+        tracer: Any = None,
     ) -> SanitisationPlan:
         """Create a sanitisation plan, strictly rejecting any path violating protected path rules."""
         planned_items: List[PlannedDeletion] = []
@@ -33,10 +34,15 @@ class SanitisationPlanner:
             for path, is_dir, size_bytes in discovered:
                 # 1. Enforce safety invariants against all protected path rules
                 violates = False
+                violated_rule_desc = None
                 for rule in policy.protected_rules:
                     if rule.is_violating(path):
                         violates = True
+                        violated_rule_desc = f"{rule.path} ({rule.description})"
                         break
+
+                if tracer is not None and hasattr(tracer, "log_safety_check"):
+                    tracer.log_safety_check(path, is_safe=not violates, violated_rule=violated_rule_desc)
 
                 if violates:
                     # Invariant violation: skip dangerous path

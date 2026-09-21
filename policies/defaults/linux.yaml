@@ -6,6 +6,7 @@
 dry_run: true
 secure_delete: false
 always_clean_on_boot: false
+thorough_logging: false
 retention_days: 365
 reset_to_golden_profile: false
 golden_profile_path: "/etc/skel"

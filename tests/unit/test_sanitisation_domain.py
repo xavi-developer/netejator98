@@ -1,5 +1,4 @@
-"""Unit tests for the Sanitisation domain, policy invariants, planner, and execution use cases."""
-
+import os
 import unittest
 
 from netejator98.sanitisation.application.build_plan import (
@@ -179,6 +178,21 @@ class TestCleaningPolicy(unittest.TestCase):
         self.assertEqual(restored.golden_profile_path, "/etc/skel")
         self.assertEqual(len(restored.golden_profile_shortcuts), 2)
         self.assertEqual(restored.golden_profile_shortcuts[1]["name"], "Moodle")
+
+    def test_thorough_logging_serialization(self) -> None:
+        policy = CleaningPolicy(thorough_logging=True)
+        data = policy.to_dict()
+        self.assertTrue(data["thorough_logging"])
+
+        restored = CleaningPolicy.from_dict(data)
+        self.assertTrue(restored.thorough_logging)
+
+        # Default is False
+        policy_default = CleaningPolicy()
+        self.assertFalse(policy_default.thorough_logging)
+        data_default = policy_default.to_dict()
+        self.assertFalse(data_default["thorough_logging"])
+        self.assertFalse(CleaningPolicy.from_dict(data_default).thorough_logging)
 
     def test_all_categories_and_strategies_per_os(self) -> None:
         import yaml
@@ -398,6 +412,74 @@ class TestSanitisationExecution(unittest.TestCase):
         self.assertFalse(self.fs.exists(f"{down_dir}/doc1.pdf"))
         self.assertFalse(self.fs.exists(f"{down_dir}/doc2.pdf"))
 
+    def test_absolute_pattern_with_glob_matches_files(self) -> None:
+        from netejator98.sanitisation.application.dry_run import DryRunUseCase
+        from netejator98.sanitisation.infrastructure.real_filesystem import RealFileSystem
+        import tempfile
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            docs_dir = os.path.join(tmpdir, "Documents")
+            os.makedirs(docs_dir, exist_ok=True)
+            doc_file = os.path.join(docs_dir, "document.pdf")
+            with open(doc_file, "w") as f:
+                f.write("content")
+
+            pat = f"{docs_dir}/*"
+            target = CleaningTarget(
+                name="Absolute User Documents",
+                category=TargetCategory.USER_DOCUMENTS,
+                patterns=(PathPattern(pat),),
+                strategy=DeletionStrategy.STANDARD,
+                os="ALL",
+            )
+            policy = CleaningPolicy(dry_run=True, targets=[target])
+
+            real_fs = RealFileSystem()
+            matches = real_fs.find_matching_paths(pat, "")
+            self.assertIn(os.path.normpath(doc_file), matches)
+
+            dry_runner = DryRunUseCase(fs=real_fs, paths=self.paths)
+            outcome = dry_runner.execute(policy)
+            self.assertEqual(outcome.files_deleted, 1)
+            self.assertGreater(outcome.bytes_freed, 0)
+
+    def test_thorough_logging_generates_trace_file(self) -> None:
+        import tempfile
+        from netejator98.sanitisation.infrastructure.real_filesystem import RealFileSystem
+        from netejator98.sanitisation.application.dry_run import DryRunUseCase
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            docs_dir = os.path.join(tmpdir, "Documents")
+            os.makedirs(docs_dir, exist_ok=True)
+            doc_file = os.path.join(docs_dir, "test_doc.txt")
+            with open(doc_file, "w") as f:
+                f.write("test content")
+
+            target = CleaningTarget(
+                name="Thorough User Docs",
+                category=TargetCategory.USER_DOCUMENTS,
+                patterns=(PathPattern(f"{docs_dir}/*"),),
+                strategy=DeletionStrategy.STANDARD,
+                os="ALL",
+            )
+            policy = CleaningPolicy(
+                dry_run=True,
+                thorough_logging=True,
+                targets=[target],
+            )
+
+            real_fs = RealFileSystem()
+            dry_runner = DryRunUseCase(fs=real_fs, paths=self.paths)
+            outcome = dry_runner.execute(policy)
+
+            self.assertEqual(outcome.files_deleted, 1)
+            self.assertIsNotNone(outcome.log_file_path)
+            self.assertTrue(os.path.exists(outcome.log_file_path))
+            with open(outcome.log_file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            self.assertIn("STARTING CLEANING PROCESS", content)
+            self.assertIn("CLEANING PROCESS FINISHED", content)
+            self.assertIn("Thorough User Docs", content)
 
 
 if __name__ == "__main__":

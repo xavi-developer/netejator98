@@ -21,6 +21,7 @@ class CleaningPolicy:
     dry_run: bool = True
     secure_delete: bool = False
     always_clean_on_boot: bool = False
+    thorough_logging: bool = False
     retention_days: int = 365
     reset_to_golden_profile: bool = False
     golden_profile_path: str = "/etc/skel"
@@ -64,6 +65,7 @@ class CleaningPolicy:
             "dry_run": self.dry_run,
             "secure_delete": self.secure_delete,
             "always_clean_on_boot": self.always_clean_on_boot,
+            "thorough_logging": self.thorough_logging,
             "retention_days": self.retention_days,
             "reset_to_golden_profile": self.reset_to_golden_profile,
             "golden_profile_path": self.golden_profile_path,
@@ -121,6 +123,7 @@ class CleaningPolicy:
             dry_run=data.get("dry_run", True),
             secure_delete=data.get("secure_delete", False),
             always_clean_on_boot=data.get("always_clean_on_boot", False),
+            thorough_logging=data.get("thorough_logging", False),
             retention_days=data.get("retention_days", 365),
             reset_to_golden_profile=data.get("reset_to_golden_profile", False),
             golden_profile_path=data.get("golden_profile_path") or "/etc/skel",

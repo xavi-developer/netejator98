@@ -76,6 +76,7 @@ class AdminView:
         self.policy_dry_run_var: Optional[tk.BooleanVar] = None
         self.policy_clean_boot_var: Optional[tk.BooleanVar] = None
         self.policy_secure_del_var: Optional[tk.BooleanVar] = None
+        self.policy_thorough_log_var: Optional[tk.BooleanVar] = None
         self.policy_retention_var: Optional[tk.StringVar] = None
         self.golden_shortcuts: list[dict[str, str]] = []
 
@@ -291,6 +292,7 @@ class AdminView:
         self.policy_dry_run_var = tk.BooleanVar(value=True)
         self.policy_clean_boot_var = tk.BooleanVar(value=False)
         self.policy_secure_del_var = tk.BooleanVar(value=False)
+        self.policy_thorough_log_var = tk.BooleanVar(value=False)
         self.policy_retention_var = tk.StringVar(value="365")
         self.golden_shortcuts = [
             {"name": "insestatut.cat", "url": "https://insestatut.cat"}
@@ -516,6 +518,7 @@ class AdminView:
             self.policy_dry_run_var = tk.BooleanVar(value=True)
             self.policy_clean_boot_var = tk.BooleanVar(value=False)
             self.policy_secure_del_var = tk.BooleanVar(value=False)
+            self.policy_thorough_log_var = tk.BooleanVar(value=False)
             self.policy_retention_var = tk.StringVar(value="365")
             self.golden_shortcuts = [
                 {"name": "insestatut.cat", "url": "https://insestatut.cat"}
@@ -581,6 +584,18 @@ class AdminView:
             relief=tk.SUNKEN,
             bd=2,
         ).pack(side=tk.LEFT, padx=6)
+
+        cb4 = tk.Checkbutton(
+            general_frame,
+            text=t("policy_thorough_log"),
+            variable=self.policy_thorough_log_var,
+            font=get_win98_font(9),
+            fg=WIN98_BLACK,
+            bg=WIN98_GRAY,
+            selectcolor=WIN98_WHITE,
+            activebackground=WIN98_GRAY,
+        )
+        cb4.grid(row=2, column=0, columnspan=2, sticky=tk.W, padx=8, pady=2)
 
         # 3. Targets List Frame (Etched groove Win98 GroupBox)
         targets_frame = create_win98_groupbox(parent, t("policy_targets_title"))
@@ -848,6 +863,7 @@ class AdminView:
             self.policy_dry_run_var.set(policy_data.get("dry_run", True))
             self.policy_clean_boot_var.set(policy_data.get("always_clean_on_boot", False))
             self.policy_secure_del_var.set(policy_data.get("secure_delete", False))
+            self.policy_thorough_log_var.set(policy_data.get("thorough_logging", False))
             self.policy_retention_var.set(str(policy_data.get("retention_days", 365)))
             self.golden_shortcuts = copy.deepcopy(
                 policy_data.get(
@@ -874,6 +890,7 @@ class AdminView:
                 "dry_run": bool(self.policy_dry_run_var.get()),
                 "always_clean_on_boot": bool(self.policy_clean_boot_var.get()),
                 "secure_delete": bool(self.policy_secure_del_var.get()),
+                "thorough_logging": bool(self.policy_thorough_log_var.get()),
                 "reset_to_golden_profile": bool(self.golden_shortcuts),
                 "golden_profile_path": "/etc/skel",
                 "golden_profile_shortcuts": self.golden_shortcuts,
@@ -904,6 +921,7 @@ class AdminView:
                 "dry_run": bool(self.policy_dry_run_var.get()),
                 "always_clean_on_boot": bool(self.policy_clean_boot_var.get()),
                 "secure_delete": bool(self.policy_secure_del_var.get()),
+                "thorough_logging": bool(self.policy_thorough_log_var.get()),
                 "reset_to_golden_profile": bool(self.golden_shortcuts),
                 "golden_profile_path": "/etc/skel",
                 "golden_profile_shortcuts": self.golden_shortcuts,
@@ -1004,11 +1022,13 @@ class AdminView:
     def _dry_run(self) -> None:
         res = self.vm.force_clean()
         if res:
+            log_info = f"\n\nRegistre detallat guardat a:\n{res.get('log_file_path')}" if res.get('log_file_path') else ""
             msg = (
                 f"Resultat de la neteja / simulació:\n\n"
-                f"Fitxers eliminats: {res.get('files_deleted', 0)}\n"
+                f"Fitxers eliminats / simulats: {res.get('files_deleted', 0)}\n"
                 f"Bytes alliberats: {res.get('bytes_freed', 0)}\n"
                 f"Objectius: {', '.join(res.get('targets', []))}"
+                f"{log_info}"
             )
             messagebox.showinfo(t("admin_dry_run"), msg, parent=self.window)
 
@@ -1312,9 +1332,10 @@ class AdminView:
         if confirm:
             res = self.vm.force_clean()
             if res:
+                log_info = f"\n\nRegistre detallat guardat a:\n{res.get('log_file_path')}" if res.get('log_file_path') else ""
                 messagebox.showinfo(
                     "Neteja completada",
-                    f"Fitxers esborrats: {res.get('files_deleted')}\nBytes alliberats: {res.get('bytes_freed')}",
+                    f"Fitxers esborrats: {res.get('files_deleted')}\nBytes alliberats: {res.get('bytes_freed')}{log_info}",
                     parent=self.window,
                 )
             else:
