@@ -1,0 +1,385 @@
+# Netejator98 Default Cleaning Policy - macOS Workstations
+# Domain: insestatut.cat
+# NOTE: By default, dry_run is active (true) and all targets are disabled (false)
+# for safe local development and evaluation without risking personal data.
+
+dry_run: true
+secure_delete: false
+always_clean_on_boot: false
+retention_days: 365
+reset_to_golden_profile: false
+golden_profile_path: "/System/Library/User Template/Non_localized"
+golden_profile_shortcuts:
+  - name: "insestatut.cat"
+    url: "https://insestatut.cat"
+
+targets:
+  # ============================================================================
+  # Linux targets (All 11 categories represented with dedicated strategies)
+  # ============================================================================
+  - name: UserDocuments
+    os: Linux
+    category: USER_DOCUMENTS
+    description: "Student user document folders (Linux)"
+    enabled: false
+    strategy: PURGE_CHILDREN
+    patterns:
+      - "Desktop/*"
+      - "Documents/*"
+      - "Downloads/*"
+      - "Pictures/*"
+      - "Videos/*"
+      - "Music/*"
+
+  - name: DesktopShortcuts
+    os: Linux
+    category: DESKTOP_SHORTCUTS
+    description: "User desktop application shortcuts (Linux)"
+    enabled: false
+    strategy: STANDARD
+    patterns:
+      - "Desktop/*.desktop"
+
+  - name: Trash
+    os: Linux
+    category: RECYCLE_BIN
+    description: "FreeDesktop Trash items (Linux)"
+    enabled: false
+    strategy: EMPTY_TRASH
+    patterns:
+      - ".local/share/Trash/*"
+
+  - name: CachesAndTemp
+    os: Linux
+    category: TEMP_AND_CACHE
+    description: "User cache, thumbnail and temp directories (Linux)"
+    enabled: false
+    strategy: PURGE_CHILDREN
+    patterns:
+      - ".cache/*"
+      - ".thumbnails/*"
+      - "/tmp/student-*"
+
+  - name: BrowserProfiles
+    os: Linux
+    category: BROWSER_PROFILES
+    description: "Web browser caches, cookies, history, and saved credentials (Linux)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - ".config/google-chrome/*"
+      - ".config/chromium/*"
+      - ".config/microsoft-edge/*"
+      - ".mozilla/firefox/*"
+      - ".config/BraveSoftware/Brave-Browser/*"
+      - ".config/opera/*"
+      - "snap/chromium/current/*"
+      - "snap/firefox/common/.mozilla/firefox/*"
+      - "snap/brave/current/*"
+      - "snap/opera/current/*"
+      - ".var/app/com.google.Chrome/*"
+      - ".var/app/org.chromium.Chromium/*"
+      - ".var/app/org.mozilla.firefox/*"
+      - ".var/app/com.brave.Browser/*"
+
+  - name: RecentFiles
+    os: Linux
+    category: RECENT_FILES
+    description: "GTK and LibreOffice recently used files (Linux)"
+    enabled: false
+    strategy: TRUNCATE
+    patterns:
+      - ".local/share/recently-used.xbel"
+      - ".config/libreoffice/*/user/registrymodifications.xcu"
+
+  - name: UserCredentials
+    os: Linux
+    category: CREDENTIALS
+    description: "SSH keys, AWS credentials, and GitHub CLI tokens (Linux)"
+    enabled: false
+    strategy: SHRED_NIST
+    patterns:
+      - ".ssh/*"
+      - ".aws/*"
+      - ".config/gh/*"
+      - ".git-credentials"
+      - ".config/git/credentials"
+
+  - name: CloudSync
+    os: Linux
+    category: CLOUD_SYNC
+    description: "Local cloud sync storage folders (Linux)"
+    enabled: false
+    strategy: CLOUD_WIPE
+    patterns:
+      - "Nextcloud/*"
+      - "ownCloud/*"
+      - "Dropbox/*"
+
+  - name: ShellHistory
+    os: Linux
+    category: SHELL_HISTORY
+    description: "Bash, Zsh, and Python interactive history logs (Linux)"
+    enabled: false
+    strategy: TRUNCATE
+    patterns:
+      - ".bash_history"
+      - ".zsh_history"
+      - ".python_history"
+
+  - name: GoldenProfileSync
+    os: Linux
+    category: GOLDEN_PROFILE
+    description: "Desktop environment overrides reset to golden skel (Linux)"
+    enabled: false
+    strategy: GOLDEN_RESET
+    patterns:
+      - ".config/mimeapps.list"
+      - ".config/user-dirs.dirs"
+
+  - name: CustomWorkspace
+    os: Linux
+    category: CUSTOM
+    description: "Student custom workspace and project build directories (Linux)"
+    enabled: false
+    strategy: CUSTOM_CLEAN
+    patterns:
+      - "Projects/*"
+      - "Workspace/*"
+
+  # ============================================================================
+  # Windows targets (All 11 categories represented with dedicated strategies)
+  # ============================================================================
+  - name: UserDocuments
+    os: Windows
+    category: USER_DOCUMENTS
+    description: "Student document libraries (Windows)"
+    enabled: false
+    strategy: PURGE_CHILDREN
+    patterns:
+      - "Desktop/*"
+      - "Documents/*"
+      - "Downloads/*"
+      - "Pictures/*"
+      - "Videos/*"
+      - "Music/*"
+
+  - name: DesktopShortcuts
+    os: Windows
+    category: DESKTOP_SHORTCUTS
+    description: "User desktop shortcut links and URLs (Windows)"
+    enabled: false
+    strategy: STANDARD
+    patterns:
+      - "Desktop/*.lnk"
+      - "Desktop/*.url"
+
+  - name: RecycleBin
+    os: Windows
+    category: RECYCLE_BIN
+    description: "Windows Recycle Bin items (Windows)"
+    enabled: false
+    strategy: EMPTY_TRASH
+    patterns:
+      - "C:/$Recycle.Bin/*"
+
+  - name: CachesAndTemp
+    os: Windows
+    category: TEMP_AND_CACHE
+    description: "Temporary files, thumbnail caches, and crash dumps (Windows)"
+    enabled: false
+    strategy: PURGE_CHILDREN
+    patterns:
+      - "AppData/Local/Temp/*"
+      - "AppData/Local/CrashDumps/*"
+      - "AppData/Local/Microsoft/Windows/Explorer/thumbcache_*.db"
+
+  - name: BrowserProfiles
+    os: Windows
+    category: BROWSER_PROFILES
+    description: "Chrome, Edge, Firefox, Brave, and Opera user profiles (Windows)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - "AppData/Local/Google/Chrome/User Data/*"
+      - "AppData/Local/Microsoft/Edge/User Data/*"
+      - "AppData/Roaming/Mozilla/Firefox/Profiles/*"
+      - "AppData/Local/BraveSoftware/Brave-Browser/User Data/*"
+
+  - name: RecentFiles
+    os: Windows
+    category: RECENT_FILES
+    description: "Windows Recent files and Quick Access MRU lists (Windows)"
+    enabled: false
+    strategy: TRUNCATE
+    patterns:
+      - "AppData/Roaming/Microsoft/Windows/Recent/*"
+      - "AppData/Roaming/Microsoft/Office/Recent/*"
+
+  - name: UserCredentials
+    os: Windows
+    category: CREDENTIALS
+    description: "SSH keys, AWS credentials, and Git credential caches (Windows)"
+    enabled: false
+    strategy: SHRED_NIST
+    patterns:
+      - ".ssh/*"
+      - ".aws/*"
+      - "AppData/Roaming/GitHub CLI/*"
+      - "_netrc"
+
+  - name: CloudSync
+    os: Windows
+    category: CLOUD_SYNC
+    description: "Local OneDrive, Dropbox, and Google Drive caches (Windows)"
+    enabled: false
+    strategy: CLOUD_WIPE
+    patterns:
+      - "OneDrive/*"
+      - "Dropbox/*"
+      - "AppData/Local/Google/DriveFS/*"
+
+  - name: ShellHistory
+    os: Windows
+    category: SHELL_HISTORY
+    description: "PowerShell PSReadLine console host command history (Windows)"
+    enabled: false
+    strategy: TRUNCATE
+    patterns:
+      - "AppData/Roaming/Microsoft/Windows/PowerShell/PSReadLine/ConsoleHost_history.txt"
+
+  - name: GoldenProfileSync
+    os: Windows
+    category: GOLDEN_PROFILE
+    description: "User startup shortcuts reset to default profile (Windows)"
+    enabled: false
+    strategy: GOLDEN_RESET
+    patterns:
+      - "AppData/Roaming/Microsoft/Windows/Start Menu/Programs/Startup/*"
+
+  - name: CustomWorkspace
+    os: Windows
+    category: CUSTOM
+    description: "Student custom workspaces and development directories (Windows)"
+    enabled: false
+    strategy: CUSTOM_CLEAN
+    patterns:
+      - "Workspace/*"
+      - "Projects/*"
+
+  # ============================================================================
+  # macOS targets (All 11 categories represented with dedicated strategies)
+  # ============================================================================
+  - name: UserDocuments
+    os: macOS
+    category: USER_DOCUMENTS
+    description: "Student user documents and downloads (macOS)"
+    enabled: false
+    strategy: PURGE_CHILDREN
+    patterns:
+      - "Desktop/*"
+      - "Documents/*"
+      - "Downloads/*"
+      - "Pictures/*"
+      - "Movies/*"
+      - "Music/*"
+
+  - name: DesktopShortcuts
+    os: macOS
+    category: DESKTOP_SHORTCUTS
+    description: "User desktop webloc links and alias files (macOS)"
+    enabled: false
+    strategy: STANDARD
+    patterns:
+      - "Desktop/*.webloc"
+      - "Desktop/*.alias"
+
+  - name: TrashBin
+    os: macOS
+    category: RECYCLE_BIN
+    description: "macOS Trash folder (macOS)"
+    enabled: false
+    strategy: EMPTY_TRASH
+    patterns:
+      - ".Trash/*"
+
+  - name: CachesAndTemp
+    os: macOS
+    category: TEMP_AND_CACHE
+    description: "User library caches, logs, and QuickLook thumbnails (macOS)"
+    enabled: false
+    strategy: PURGE_CHILDREN
+    patterns:
+      - "Library/Caches/*"
+      - "Library/Logs/*"
+
+  - name: BrowserProfiles
+    os: macOS
+    category: BROWSER_PROFILES
+    description: "Safari, Chrome, and Firefox user data (macOS)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - "Library/Application Support/Google/Chrome/*"
+      - "Library/Application Support/Firefox/Profiles/*"
+      - "Library/Safari/LocalStorage/*"
+
+  - name: RecentFiles
+    os: macOS
+    category: RECENT_FILES
+    description: "Finder and Application recent items lists (macOS)"
+    enabled: false
+    strategy: TRUNCATE
+    patterns:
+      - "Library/Application Support/com.apple.sharedfilelist/*"
+
+  - name: UserCredentials
+    os: macOS
+    category: CREDENTIALS
+    description: "SSH keys, AWS credentials, and GitHub CLI tokens (macOS)"
+    enabled: false
+    strategy: SHRED_NIST
+    patterns:
+      - ".ssh/*"
+      - ".aws/*"
+      - ".config/gh/*"
+      - ".git-credentials"
+
+  - name: CloudSync
+    os: macOS
+    category: CLOUD_SYNC
+    description: "Local iCloud, Dropbox, and Google Drive storage (macOS)"
+    enabled: false
+    strategy: CLOUD_WIPE
+    patterns:
+      - "Library/CloudStorage/*"
+      - "Dropbox/*"
+
+  - name: ShellHistory
+    os: macOS
+    category: SHELL_HISTORY
+    description: "Zsh and Bash command histories (macOS)"
+    enabled: false
+    strategy: TRUNCATE
+    patterns:
+      - ".zsh_history"
+      - ".bash_history"
+
+  - name: GoldenProfileSync
+    os: macOS
+    category: GOLDEN_PROFILE
+    description: "Dock and user preferences reset to template (macOS)"
+    enabled: false
+    strategy: GOLDEN_RESET
+    patterns:
+      - "Library/Preferences/com.apple.dock.plist"
+
+  - name: CustomWorkspace
+    os: macOS
+    category: CUSTOM
+    description: "Student custom code workspaces and build folders (macOS)"
+    enabled: false
+    strategy: CUSTOM_CLEAN
+    patterns:
+      - "Workspace/*"
+      - "Projects/*"

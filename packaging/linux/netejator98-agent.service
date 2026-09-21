@@ -1,0 +1,33 @@
+[Unit]
+Description=Netejator98 Privileged Agent Daemon
+Documentation=https://github.com/insestatut/netejator98
+After=network.target local-fs.target
+Before=display-manager.service graphical.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/netejator98 agent --storage /var/lib/netejator98
+Restart=always
+RestartSec=3
+User=root
+Group=root
+
+# Process & Capabilities
+CapabilityBoundingSet=CAP_DAC_OVERRIDE CAP_FOWNER CAP_KILL CAP_SYS_ADMIN
+AmbientCapabilities=CAP_DAC_OVERRIDE CAP_FOWNER CAP_KILL CAP_SYS_ADMIN
+
+# Filesystem Isolation
+ProtectSystem=strict
+ReadWritePaths=/var/lib/netejator98 /run/netejator98 /home /tmp /var/tmp
+RuntimeDirectory=netejator98
+RuntimeDirectoryMode=0755
+
+# Security Hardening
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictRealtime=true
+
+[Install]
+WantedBy=multi-user.target
+

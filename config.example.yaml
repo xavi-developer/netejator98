@@ -1,0 +1,89 @@
+# Netejator98 Configuration & Cleaning Policy Example
+# Default location: /var/lib/netejator98/config.yaml (Linux/macOS)
+#                   C:\ProgramData\netejator98\config.yaml (Windows)
+
+# Institutional Domain Policy
+# Allowed email domains for student session logon.
+allowed_domains:
+  - "insestatut.cat"
+
+# Execution Options
+# If true, sanitisation runs in dry-run mode (simulating cleaning without deleting any files).
+# Set to false in production on school computers.
+dry_run: true
+
+# If true, sanitisation is performed on every login, even if the same user logs in sequentially.
+always_clean: false
+
+# Default user interface language: "ca" (Catalan), "es" (Spanish), or "en" (English)
+default_language: "ca"
+
+# Cleaning Targets: list of targets with name, category, and file patterns.
+# By default, all targets have enabled: false for safe local testing.
+# Supported categories:
+#   - UserDocuments
+#   - BrowserData
+#   - ApplicationCache
+#   - TempAndCache
+#   - ShellHistory
+#   - CredentialsAndTokens
+#   - CommunicationApps
+targets:
+  - name: "DesktopFiles"
+    category: "UserDocuments"
+    enabled: false
+    patterns:
+      - "Desktop/*"
+
+  - name: "PersonalDocuments"
+    category: "UserDocuments"
+    enabled: false
+    patterns:
+      - "Documents/*"
+
+  - name: "DownloadsFolder"
+    category: "UserDocuments"
+    enabled: false
+    patterns:
+      - "Downloads/*"
+
+  - name: "PicturesAndVideos"
+    category: "UserDocuments"
+    enabled: false
+    patterns:
+      - "Pictures/*"
+      - "Videos/*"
+      - "Music/*"
+
+  - name: "UserCaches"
+    category: "TempAndCache"
+    enabled: false
+    patterns:
+      - ".cache/*"
+      - "AppData/Local/Temp/*"
+      - "Library/Caches/*"
+
+  - name: "ShellHistories"
+    category: "ShellHistory"
+    enabled: false
+    patterns:
+      - ".bash_history"
+      - ".zsh_history"
+      - ".python_history"
+      - ".node_repl_history"
+
+  - name: "DeveloperCredentials"
+    category: "CredentialsAndTokens"
+    enabled: false
+    patterns:
+      - ".git-credentials"
+      - ".config/gh/hosts.yml"
+      - ".ssh/known_hosts*"
+
+  - name: "CommunicationCache"
+    category: "CommunicationApps"
+    enabled: false
+    patterns:
+      - ".config/discord/Cache/*"
+      - ".config/Slack/Cache/*"
+      - ".config/teams-for-linux/Cache/*"

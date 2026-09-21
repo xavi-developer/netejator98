@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "netejator98"
+version = "0.1.0"
+description = "Cross-platform shared-PC sanitizer with DDD architecture for schools"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "GPL-3.0-or-later" }
+authors = [
+    { name = "Netejator98 Team", email = "admin@insestatut.cat" }
+]
+dependencies = [
+    "pynacl>=1.5.0",
+    "cryptography>=41.0.0",
+    "pyyaml>=6.0.0",
+    "pydantic>=2.0.0"
+]
+
+[project.optional-dependencies]
+gui-qt = [
+    "pyside6>=6.5.0"
+]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "mypy>=1.5.0",
+    "ruff>=0.1.0",
+    "black>=23.7.0"
+]
+
+[project.scripts]
+netejator98-agent = "netejator98.agent.daemon:main"
+netejator98-ui = "netejator98.main:main"
+netejator98 = "netejator98.main:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "B", "A", "C4", "SIM"]
+ignore = ["E501"]
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+

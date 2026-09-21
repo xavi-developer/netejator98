@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Netejator98 Kiosk
+Comment=Shared PC session identification and cleaner prompt
+Exec=/usr/local/bin/netejator98 ui
+Terminal=false
+Categories=System;Security;
+X-GNOME-Autostart-enabled=true
+X-KDE-autostart-after=panel
+X-MATE-Autostart-enabled=true
+X-XFCE-Autostart-Override=true
+NoDisplay=false
+

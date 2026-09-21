@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>cat.insestatut.netejator98.agent</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/netejator98</string>
+        <string>agent</string>
+        <string>--storage</string>
+        <string>/var/lib/netejator98</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>/var/log/netejator98-agent.log</string>
+    <key>StandardErrorPath</key>
+    <string>/var/log/netejator98-agent.err</string>
+</dict>
+</plist>
+
