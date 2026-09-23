@@ -321,6 +321,29 @@ class AdminView:
         self.notebook.add(maint_frame, text=f"  {t('admin_tab_maintenance')}  ")
         self._build_maintenance_tab(maint_frame)
 
+        tab_entries = [
+            (log_frame, t("admin_tab_logs")),
+            (policy_frame, t("admin_tab_policy")),
+            (golden_frame, t("admin_tab_golden")),
+            (maint_frame, t("admin_tab_maintenance")),
+        ]
+
+        def update_active_tab_highlight(event: Any = None) -> None:
+            try:
+                selected_tab = self.notebook.select()
+                if not selected_tab:
+                    return
+                for idx, (frame, title) in enumerate(tab_entries):
+                    if str(frame) == str(selected_tab):
+                        self.notebook.tab(idx, text=f"  ▶ {title}  ")
+                    else:
+                        self.notebook.tab(idx, text=f"    {title}    ")
+            except Exception:
+                pass
+
+        self.notebook.bind("<<NotebookTabChanged>>", update_active_tab_highlight)
+        update_active_tab_highlight()
+
         # Bottom Property Sheet Control Bar (D'acord, Cancel·la, Aplica)
         bottom_bar = tk.Frame(main_frame, bg=WIN98_GRAY, padx=10, pady=8)
         bottom_bar.pack(fill=tk.X)
@@ -506,14 +529,6 @@ class AdminView:
         self.targets_list: list[dict[str, Any]] = []
         self._current_policy_raw: dict[str, Any] = {}
 
-        # 1. Top toolbar
-        toolbar = tk.Frame(parent, bg=WIN98_GRAY, pady=4)
-        toolbar.pack(fill=tk.X, pady=(0, 4))
-
-        # 2. General Settings Frame (Etched groove Win98 GroupBox)
-        general_frame = create_win98_groupbox(parent, t("policy_general_title"))
-        general_frame.pack(fill=tk.X, pady=4)
-
         if not hasattr(self, "policy_dry_run_var") or self.policy_dry_run_var is None:
             self.policy_dry_run_var = tk.BooleanVar(value=True)
             self.policy_clean_boot_var = tk.BooleanVar(value=False)
@@ -524,6 +539,127 @@ class AdminView:
                 {"name": "insestatut.cat", "url": "https://insestatut.cat"}
             ]
 
+        def save_policy_data(quiet: bool = True) -> bool:
+            ret_days = 365
+            if self.policy_retention_var is not None:
+                try:
+                    ret_days = int(self.policy_retention_var.get().strip())
+                except ValueError:
+                    pass
+
+            data = {
+                "dry_run": bool(self.policy_dry_run_var.get()) if self.policy_dry_run_var else True,
+                "always_clean_on_boot": bool(self.policy_clean_boot_var.get()) if self.policy_clean_boot_var else False,
+                "secure_delete": bool(self.policy_secure_del_var.get()) if self.policy_secure_del_var else False,
+                "thorough_logging": bool(self.policy_thorough_log_var.get()) if self.policy_thorough_log_var else False,
+                "reset_to_golden_profile": bool(self.golden_shortcuts),
+                "golden_profile_path": "/etc/skel",
+                "golden_profile_shortcuts": self.golden_shortcuts,
+                "retention_days": ret_days,
+                "targets": self.targets_list,
+                "protected_paths": self._current_policy_raw.get("protected_paths", []),
+            }
+
+            saved = self.vm.save_policy(data)
+            if saved:
+                if hasattr(self, "policy_status_label") and self.policy_status_label:
+                    self.policy_status_label.config(text="✓ Canvis desats immediatament", fg=WIN98_GREEN)
+            else:
+                messagebox.showerror("Error", self.vm.error_message or "Error al desar la configuració", parent=self.window)
+            return saved
+
+        self._save_current_policy = save_policy_data
+
+        def auto_save() -> None:
+            save_policy_data(quiet=True)
+
+        def view_yaml_popup() -> None:
+            ret_days = 365
+            if self.policy_retention_var is not None:
+                try:
+                    ret_days = int(self.policy_retention_var.get().strip())
+                except ValueError:
+                    pass
+
+            preview_dict = {
+                "dry_run": bool(self.policy_dry_run_var.get()) if self.policy_dry_run_var else True,
+                "always_clean_on_boot": bool(self.policy_clean_boot_var.get()) if self.policy_clean_boot_var else False,
+                "secure_delete": bool(self.policy_secure_del_var.get()) if self.policy_secure_del_var else False,
+                "thorough_logging": bool(self.policy_thorough_log_var.get()) if self.policy_thorough_log_var else False,
+                "reset_to_golden_profile": bool(self.golden_shortcuts),
+                "golden_profile_path": "/etc/skel",
+                "golden_profile_shortcuts": self.golden_shortcuts,
+                "retention_days": ret_days,
+                "targets": self.targets_list,
+                "protected_paths": self._current_policy_raw.get("protected_paths", []),
+            }
+
+            dlg = tk.Toplevel(self.window)
+            dlg.title("Vista Prèvia YAML")
+            dlg.geometry("560x420")
+            dlg.configure(bg=WIN98_GRAY)
+            dlg.attributes("-topmost", True)
+
+            dlg_frame = create_win98_window_frame(dlg, bd=2)
+            dlg_frame.pack(fill=tk.BOTH, expand=True)
+
+            Win98TitleBar(
+                dlg_frame,
+                title="Vista Prèvia de la Política (YAML)",
+                icon_type="info",
+                on_close=dlg.destroy,
+                is_dialog=True,
+                height=22,
+            ).pack(fill=tk.X)
+
+            txt_box = tk.Frame(dlg_frame, bg=WIN98_GRAY, padx=12, pady=10)
+            txt_box.pack(fill=tk.BOTH, expand=True)
+
+            txt = tk.Text(
+                txt_box, font=get_win98_font(9), bg=WIN98_WHITE, fg=WIN98_BLACK,
+                relief=tk.SUNKEN, bd=2, wrap=tk.NONE
+            )
+            txt.pack(fill=tk.BOTH, expand=True)
+            txt.insert("1.0", yaml.safe_dump(preview_dict, indent=2, sort_keys=False))
+            txt.config(state=tk.DISABLED)
+
+            btn_f = tk.Frame(dlg_frame, bg=WIN98_GRAY, pady=8)
+            btn_f.pack(anchor=tk.CENTER)
+            create_win98_button(btn_f, text="Tancar", command=dlg.destroy, is_default=True, padx=20).pack()
+
+        # 1. Top toolbar
+        toolbar = tk.Frame(parent, bg=WIN98_GRAY, pady=4)
+        toolbar.pack(fill=tk.X, pady=(0, 4))
+
+        create_win98_button(
+            toolbar,
+            text=f"🔍 {t('admin_dry_run')}",
+            command=self._dry_run,
+            is_default=False,
+            padx=10,
+        ).pack(side=tk.LEFT, padx=4)
+
+        self.policy_status_label = tk.Label(
+            toolbar,
+            text="💾 Desat automàtic",
+            font=get_win98_font(8),
+            fg=WIN98_DARK,
+            bg=WIN98_GRAY,
+        )
+        self.policy_status_label.pack(side=tk.LEFT, padx=12)
+
+        create_win98_button(
+            toolbar,
+            text=f"👁️ {t('policy_view_yaml_btn')}",
+            command=view_yaml_popup,
+            is_default=False,
+            padx=10,
+        ).pack(side=tk.RIGHT, padx=4)
+
+        # 2. General Settings Frame (Etched groove Win98 GroupBox)
+        general_frame = create_win98_groupbox(parent, t("policy_general_title"))
+        general_frame.pack(fill=tk.X, pady=4)
+
         cb1 = tk.Checkbutton(
             general_frame,
             text=t("policy_dry_run"),
@@ -533,6 +669,7 @@ class AdminView:
             bg=WIN98_GRAY,
             selectcolor=WIN98_WHITE,
             activebackground=WIN98_GRAY,
+            command=auto_save,
         )
         cb1.grid(row=0, column=0, sticky=tk.W, padx=8, pady=2)
 
@@ -545,6 +682,7 @@ class AdminView:
             bg=WIN98_GRAY,
             selectcolor=WIN98_WHITE,
             activebackground=WIN98_GRAY,
+            command=auto_save,
         )
         cb2.grid(row=0, column=1, sticky=tk.W, padx=8, pady=2)
 
@@ -557,6 +695,7 @@ class AdminView:
             bg=WIN98_GRAY,
             selectcolor=WIN98_WHITE,
             activebackground=WIN98_GRAY,
+            command=auto_save,
         )
         cb3.grid(row=1, column=0, sticky=tk.W, padx=8, pady=2)
 
@@ -571,7 +710,7 @@ class AdminView:
             bg=WIN98_GRAY,
         ).pack(side=tk.LEFT)
 
-        tk.Spinbox(
+        ret_spinbox = tk.Spinbox(
             ret_frame,
             from_=1,
             to_=3650,
@@ -583,7 +722,11 @@ class AdminView:
             insertbackground=WIN98_BLACK,
             relief=tk.SUNKEN,
             bd=2,
-        ).pack(side=tk.LEFT, padx=6)
+            command=auto_save,
+        )
+        ret_spinbox.pack(side=tk.LEFT, padx=6)
+        ret_spinbox.bind("<FocusOut>", lambda e: auto_save())
+        ret_spinbox.bind("<Return>", lambda e: auto_save())
 
         cb4 = tk.Checkbutton(
             general_frame,
@@ -594,6 +737,7 @@ class AdminView:
             bg=WIN98_GRAY,
             selectcolor=WIN98_WHITE,
             activebackground=WIN98_GRAY,
+            command=auto_save,
         )
         cb4.grid(row=2, column=0, columnspan=2, sticky=tk.W, padx=8, pady=2)
 
@@ -601,8 +745,12 @@ class AdminView:
         targets_frame = create_win98_groupbox(parent, t("policy_targets_title"))
         targets_frame.pack(fill=tk.BOTH, expand=True, pady=4)
 
+        # 4. Target Action Buttons Panel (packed FIRST with side=RIGHT so it is always allocated space)
+        btn_box = tk.Frame(targets_frame, bg=WIN98_GRAY)
+        btn_box.pack(side=tk.RIGHT, fill=tk.Y, padx=(6, 0))
+
         tree_box = tk.Frame(targets_frame, bg=WIN98_GRAY, relief=tk.SUNKEN, bd=2)
-        tree_box.pack(fill=tk.BOTH, expand=True, side=tk.LEFT, padx=(0, 6))
+        tree_box.pack(fill=tk.BOTH, expand=True, side=tk.LEFT)
 
         columns = ("enabled", "os", "name", "category", "strategy", "patterns", "description")
         self.policy_tree = ttk.Treeview(tree_box, columns=columns, show="headings", height=8)
@@ -615,13 +763,13 @@ class AdminView:
         self.policy_tree.heading("patterns", text=t("policy_col_patterns"))
         self.policy_tree.heading("description", text=t("policy_col_desc"))
 
-        self.policy_tree.column("enabled", width=70, anchor=tk.CENTER)
-        self.policy_tree.column("os", width=70, anchor=tk.CENTER)
-        self.policy_tree.column("name", width=130)
-        self.policy_tree.column("category", width=130)
-        self.policy_tree.column("strategy", width=80, anchor=tk.CENTER)
-        self.policy_tree.column("patterns", width=200)
-        self.policy_tree.column("description", width=160)
+        self.policy_tree.column("enabled", width=65, minwidth=50, anchor=tk.CENTER)
+        self.policy_tree.column("os", width=60, minwidth=50, anchor=tk.CENTER)
+        self.policy_tree.column("name", width=115, minwidth=80)
+        self.policy_tree.column("category", width=120, minwidth=90)
+        self.policy_tree.column("strategy", width=80, minwidth=70, anchor=tk.CENTER)
+        self.policy_tree.column("patterns", width=140, minwidth=100)
+        self.policy_tree.column("description", width=110, minwidth=80)
 
         p_scrolly = ttk.Scrollbar(tree_box, orient=tk.VERTICAL, command=self.policy_tree.yview)
         p_scrollx = ttk.Scrollbar(tree_box, orient=tk.HORIZONTAL, command=self.policy_tree.xview)
@@ -632,10 +780,6 @@ class AdminView:
         p_scrollx.grid(row=1, column=0, sticky="ew")
         tree_box.grid_rowconfigure(0, weight=1)
         tree_box.grid_columnconfigure(0, weight=1)
-
-        # 4. Target Action Buttons Panel
-        btn_box = tk.Frame(targets_frame, bg=WIN98_GRAY)
-        btn_box.pack(fill=tk.Y, side=tk.RIGHT)
 
         def refresh_policy_tree() -> None:
             for item in self.policy_tree.get_children():
@@ -675,16 +819,19 @@ class AdminView:
                 cur = self.targets_list[idx].get("enabled", False)
                 self.targets_list[idx]["enabled"] = not cur
                 refresh_policy_tree()
+                auto_save()
 
         def enable_all_targets() -> None:
             for target in self.targets_list:
                 target["enabled"] = True
             refresh_policy_tree()
+            auto_save()
 
         def disable_all_targets() -> None:
             for target in self.targets_list:
                 target["enabled"] = False
             refresh_policy_tree()
+            auto_save()
 
         def delete_selected_target() -> None:
             idx = get_selected_target_index()
@@ -693,6 +840,7 @@ class AdminView:
                 if messagebox.askyesno("Confirmació", f"Vols eliminar l'objectiu '{target_name}'?", parent=self.window):
                     del self.targets_list[idx]
                     refresh_policy_tree()
+                    auto_save()
 
         def open_target_editor(edit_idx: int | None = None) -> None:
             is_edit = edit_idx is not None and 0 <= edit_idx < len(self.targets_list)
@@ -832,6 +980,7 @@ class AdminView:
                     self.targets_list.append(new_entry)
 
                 refresh_policy_tree()
+                auto_save()
                 dlg.destroy()
 
             btn_f = tk.Frame(dlg_frame, bg=WIN98_GRAY, pady=8)
@@ -841,11 +990,11 @@ class AdminView:
 
             _safe_modal_grab(dlg)
 
-        # Right-side action buttons
-        create_win98_button(btn_box, text=t("policy_toggle_btn"), command=toggle_selected_target, width=16).pack(pady=2)
+        # Right-side action buttons: Add and Delete placed prominently at the top
         create_win98_button(btn_box, text=t("policy_add_btn"), command=lambda: open_target_editor(None), width=16).pack(pady=2)
-        create_win98_button(btn_box, text=t("policy_edit_btn"), command=lambda: open_target_editor(get_selected_target_index()), width=16).pack(pady=2)
         create_win98_button(btn_box, text=t("policy_delete_btn"), command=delete_selected_target, width=16).pack(pady=2)
+        create_win98_button(btn_box, text=t("policy_edit_btn"), command=lambda: open_target_editor(get_selected_target_index()), width=16).pack(pady=2)
+        create_win98_button(btn_box, text=t("policy_toggle_btn"), command=toggle_selected_target, width=16).pack(pady=2)
 
         # Separator line
         tk.Frame(btn_box, height=2, relief=tk.SUNKEN, bd=1, bg=WIN98_GRAY).pack(fill=tk.X, pady=6)
@@ -855,8 +1004,9 @@ class AdminView:
 
         self.policy_tree.bind("<Double-1>", lambda e: open_target_editor(get_selected_target_index()))
         self.policy_tree.bind("<space>", lambda e: toggle_selected_target())
+        self.policy_tree.bind("<Delete>", lambda e: delete_selected_target())
 
-        # 5. Core Policy Load and Save
+        # 5. Core Policy Load
         def load_policy_data() -> None:
             policy_data = self.vm.fetch_policy()
             self._current_policy_raw = policy_data
@@ -878,144 +1028,6 @@ class AdminView:
             refresh_policy_tree()
 
         self._load_policy_data = load_policy_data
-
-        def save_policy_data(quiet: bool = False) -> bool:
-            ret_days = 365
-            try:
-                ret_days = int(self.policy_retention_var.get().strip())
-            except ValueError:
-                pass
-
-            data = {
-                "dry_run": bool(self.policy_dry_run_var.get()),
-                "always_clean_on_boot": bool(self.policy_clean_boot_var.get()),
-                "secure_delete": bool(self.policy_secure_del_var.get()),
-                "thorough_logging": bool(self.policy_thorough_log_var.get()),
-                "reset_to_golden_profile": bool(self.golden_shortcuts),
-                "golden_profile_path": "/etc/skel",
-                "golden_profile_shortcuts": self.golden_shortcuts,
-                "retention_days": ret_days,
-                "targets": self.targets_list,
-                "protected_paths": self._current_policy_raw.get("protected_paths", []),
-            }
-
-            saved = self.vm.save_policy(data)
-            if saved:
-                if not quiet:
-                    messagebox.showinfo("Configuració", t("policy_saved_success"), parent=self.window)
-            else:
-                if not quiet:
-                    messagebox.showerror("Error", self.vm.error_message or "Error al desar la configuració", parent=self.window)
-            return saved
-
-        self._save_current_policy = save_policy_data
-
-        def view_yaml_popup() -> None:
-            ret_days = 365
-            try:
-                ret_days = int(self.policy_retention_var.get().strip())
-            except ValueError:
-                pass
-
-            preview_dict = {
-                "dry_run": bool(self.policy_dry_run_var.get()),
-                "always_clean_on_boot": bool(self.policy_clean_boot_var.get()),
-                "secure_delete": bool(self.policy_secure_del_var.get()),
-                "thorough_logging": bool(self.policy_thorough_log_var.get()),
-                "reset_to_golden_profile": bool(self.golden_shortcuts),
-                "golden_profile_path": "/etc/skel",
-                "golden_profile_shortcuts": self.golden_shortcuts,
-                "retention_days": ret_days,
-                "targets": self.targets_list,
-                "protected_paths": self._current_policy_raw.get("protected_paths", []),
-            }
-
-            dlg = tk.Toplevel(self.window)
-            dlg.title("Vista Prèvia YAML")
-            dlg.geometry("560x420")
-            dlg.configure(bg=WIN98_GRAY)
-            dlg.attributes("-topmost", True)
-
-            dlg_frame = create_win98_window_frame(dlg, bd=2)
-            dlg_frame.pack(fill=tk.BOTH, expand=True)
-
-            Win98TitleBar(
-                dlg_frame,
-                title="Vista Prèvia de la Política (YAML)",
-                icon_type="info",
-                on_close=dlg.destroy,
-                is_dialog=True,
-                height=22,
-            ).pack(fill=tk.X)
-
-            txt_box = tk.Frame(dlg_frame, bg=WIN98_GRAY, padx=12, pady=10)
-            txt_box.pack(fill=tk.BOTH, expand=True)
-
-            txt = tk.Text(
-                txt_box, font=get_win98_font(9), bg=WIN98_WHITE, fg=WIN98_BLACK,
-                relief=tk.SUNKEN, bd=2, wrap=tk.NONE
-            )
-            txt.pack(fill=tk.BOTH, expand=True)
-            txt.insert("1.0", yaml.safe_dump(preview_dict, indent=2, sort_keys=False))
-            txt.config(state=tk.DISABLED)
-
-            btn_f = tk.Frame(dlg_frame, bg=WIN98_GRAY, pady=8)
-            btn_f.pack(anchor=tk.CENTER)
-            create_win98_button(btn_f, text="Tancar", command=dlg.destroy, is_default=True, padx=20).pack()
-
-        def reset_policy_to_defaults() -> None:
-            if messagebox.askyesno(
-                "Restablir Política",
-                t("policy_reset_confirm"),
-                parent=self.window,
-            ):
-                policy_data = self.vm.reset_policy()
-                if policy_data:
-                    load_policy_data()
-                    messagebox.showinfo("Configuració", t("policy_reset_success"), parent=self.window)
-                else:
-                    messagebox.showerror("Error", self.vm.error_message or "Error en restablir la política", parent=self.window)
-
-        # Toolbar action buttons
-        create_win98_button(
-            toolbar,
-            text=f"💾 {t('admin_save_policy')}",
-            command=lambda: save_policy_data(quiet=False),
-            is_default=True,
-            padx=12,
-        ).pack(side=tk.LEFT, padx=4)
-
-        create_win98_button(
-            toolbar,
-            text="🔄 Recarregar",
-            command=load_policy_data,
-            is_default=False,
-            padx=10,
-        ).pack(side=tk.LEFT, padx=4)
-
-        create_win98_button(
-            toolbar,
-            text=t("policy_reset_defaults_btn"),
-            command=reset_policy_to_defaults,
-            is_default=False,
-            padx=8,
-        ).pack(side=tk.LEFT, padx=4)
-
-        create_win98_button(
-            toolbar,
-            text=f"🔍 {t('admin_dry_run')}",
-            command=self._dry_run,
-            is_default=False,
-            padx=10,
-        ).pack(side=tk.LEFT, padx=4)
-
-        create_win98_button(
-            toolbar,
-            text=f"👁️ {t('policy_view_yaml_btn')}",
-            command=view_yaml_popup,
-            is_default=False,
-            padx=10,
-        ).pack(side=tk.RIGHT, padx=4)
 
         load_policy_data()
 
@@ -1075,6 +1087,10 @@ class AdminView:
         content_box = tk.Frame(crud_box, bg=WIN98_GRAY, padx=8, pady=8)
         content_box.pack(fill=tk.BOTH, expand=True)
 
+        # Action buttons on right side (packed FIRST with side=RIGHT)
+        btn_box = tk.Frame(content_box, bg=WIN98_GRAY, padx=10)
+        btn_box.pack(side=tk.RIGHT, fill=tk.Y)
+
         # Treeview (ListView in Details mode)
         tree_frame = tk.Frame(content_box, bg=WIN98_GRAY)
         tree_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -1090,10 +1106,6 @@ class AdminView:
         self.golden_tree.configure(yscrollcommand=tree_scroll.set)
         self.golden_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         tree_scroll.pack(side=tk.RIGHT, fill=tk.Y)
-
-        # Action buttons on right side
-        btn_box = tk.Frame(content_box, bg=WIN98_GRAY, padx=10)
-        btn_box.pack(side=tk.RIGHT, fill=tk.Y)
 
         def refresh_golden_tree() -> None:
             for item in self.golden_tree.get_children():
@@ -1180,6 +1192,8 @@ class AdminView:
                     self.golden_shortcuts.append(new_sc)
 
                 refresh_golden_tree()
+                if hasattr(self, "_save_current_policy"):
+                    self._save_current_policy(quiet=True)
                 dlg.destroy()
 
             create_win98_button(btn_row, text="D'acord", command=save_shortcut, is_default=True, padx=16).pack(side=tk.LEFT, padx=4)
@@ -1196,6 +1210,8 @@ class AdminView:
             if confirm:
                 self.golden_shortcuts.pop(idx)
                 refresh_golden_tree()
+                if hasattr(self, "_save_current_policy"):
+                    self._save_current_policy(quiet=True)
 
         create_win98_button(
             btn_box,

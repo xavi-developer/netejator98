@@ -104,15 +104,30 @@ def apply_win98_ttk_theme(root_or_style: Optional[Any] = None) -> Optional[ttk.S
             background=WIN98_GRAY,
             foreground=WIN98_BLACK,
             font=font_regular,
-            padding=[10, 3],
+            padding=[12, 4],
             borderwidth=2,
             relief=tk.RAISED,
         )
         style.map(
             "TNotebook.Tab",
-            background=[("selected", WIN98_GRAY), ("active", WIN98_LIGHT)],
-            foreground=[("selected", WIN98_BLACK)],
-            relief=[("selected", tk.RAISED)],
+            background=[
+                ("selected", WIN98_WHITE),
+                ("active", WIN98_LIGHT),
+                ("!selected", WIN98_GRAY),
+            ],
+            foreground=[
+                ("selected", WIN98_BLUE_START),
+                ("active", WIN98_BLACK),
+                ("!selected", WIN98_BLACK),
+            ],
+            font=[
+                ("selected", font_bold),
+                ("!selected", font_regular),
+            ],
+            relief=[
+                ("selected", tk.RAISED),
+                ("!selected", tk.GROOVE),
+            ],
         )
 
         # 3. Treeview (Windows 98 Details / ListView)

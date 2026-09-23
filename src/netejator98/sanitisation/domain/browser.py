@@ -37,6 +37,13 @@ class BrowserProfile:
     profile_path: str
     target_subpaths: List[str] = field(
         default_factory=lambda: [
+            # Chromium / Chrome / Edge / Brave / Opera profile targets
+            "Default/Bookmarks",
+            "Default/Bookmarks.bak",
+            "Default/Favicons",
+            "Default/Top Sites",
+            "Default/Visited Links",
+            "Default/Shortcuts",
             "Default/History",
             "Default/Cookies",
             "Default/Login Data",
@@ -47,8 +54,12 @@ class BrowserProfile:
             "Default/Code Cache",
             "Default/GPUCache",
             "Default/Extensions",
+            "Default/Local Storage",
+            "Default/IndexedDB",
             # Firefox profile targets
             "places.sqlite",
+            "favicons.sqlite",
+            "bookmarkbackups",
             "cookies.sqlite",
             "logins.json",
             "key4.db",
@@ -56,6 +67,14 @@ class BrowserProfile:
             "sessionstore.jsonlz4",
             "storage",
             "cache2",
+            # Safari profile targets
+            "Bookmarks.plist",
+            "History.db",
+            "TopSites.plist",
+            "Favicon Cache",
+            "Downloads.plist",
+            "LocalStorage",
+            "Cookies.binarycookies",
         ]
     )
 

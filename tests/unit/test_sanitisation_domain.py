@@ -218,6 +218,113 @@ class TestCleaningPolicy(unittest.TestCase):
             self.assertIn("TRUNCATE", os_strategies)
             self.assertIn("SHRED_NIST", os_strategies)
             self.assertIn("EMPTY_TRASH", os_strategies)
+            self.assertIn("BROWSER_CLEAN", os_strategies)
+
+    def test_common_browsers_cleaning_objectives_all_os(self) -> None:
+        import yaml
+        from pathlib import Path
+        from netejator98.sanitisation.domain.browser import BrowserProfile, BrowserType, BrowserVariant
+
+        repo_root = Path(__file__).resolve().parent.parent.parent
+
+        expected_browsers_per_os = {
+            "Linux": [
+                "BrowserGoogleChrome",
+                "BrowserMozillaFirefox",
+                "BrowserMicrosoftEdge",
+                "BrowserBrave",
+                "BrowserOpera",
+                "BrowserChromium",
+            ],
+            "Windows": [
+                "BrowserGoogleChrome",
+                "BrowserMozillaFirefox",
+                "BrowserMicrosoftEdge",
+                "BrowserBrave",
+                "BrowserOpera",
+                "BrowserChromium",
+            ],
+            "macOS": [
+                "BrowserGoogleChrome",
+                "BrowserMozillaFirefox",
+                "BrowserMicrosoftEdge",
+                "BrowserBrave",
+                "BrowserOpera",
+                "BrowserSafari",
+            ],
+        }
+
+        # Check default YAML files for each OS
+        for policy_filename in ("linux.yaml", "windows.yaml", "macos.yaml"):
+            policy_file = repo_root / "policies" / "defaults" / policy_filename
+            self.assertTrue(policy_file.exists(), f"Default policy file missing: {policy_file}")
+            with open(policy_file, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+
+            policy = CleaningPolicy.from_dict(data)
+
+            for os_name, browser_targets in expected_browsers_per_os.items():
+                targets_by_name = {
+                    t.name: t for t in policy.targets if t.os == os_name
+                }
+                for expected_name in browser_targets:
+                    self.assertIn(
+                        expected_name,
+                        targets_by_name,
+                        f"Missing browser target {expected_name} for OS {os_name} in {policy_filename}",
+                    )
+                    t = targets_by_name[expected_name]
+                    self.assertEqual(
+                        t.category,
+                        TargetCategory.BROWSER_PROFILES,
+                        f"Target {t.name} must have BROWSER_PROFILES category",
+                    )
+                    self.assertEqual(
+                        t.strategy,
+                        DeletionStrategy.BROWSER_CLEAN,
+                        f"Target {t.name} must have BROWSER_CLEAN strategy",
+                    )
+
+                    # Verify pattern coverage includes bookmarks/favorites, history, and cache
+                    patterns_str = " ".join(str(p) for p in t.patterns).lower()
+                    has_bookmarks = any(
+                        keyword in patterns_str
+                        for keyword in ("bookmark", "places", "favorites")
+                    )
+                    has_history = any(
+                        keyword in patterns_str
+                        for keyword in ("history", "places")
+                    )
+                    has_cache = "cache" in patterns_str
+
+                    self.assertTrue(
+                        has_bookmarks,
+                        f"Target {t.name} ({os_name}) must include bookmarks/favorites patterns, got: {patterns_str}",
+                    )
+                    self.assertTrue(
+                        has_history,
+                        f"Target {t.name} ({os_name}) must include history patterns, got: {patterns_str}",
+                    )
+                    self.assertTrue(
+                        has_cache,
+                        f"Target {t.name} ({os_name}) must include cache patterns, got: {patterns_str}",
+                    )
+
+        # Also verify BrowserProfile domain model contains bookmarks, history, cache, cookies
+        profile = BrowserProfile(
+            browser_type=BrowserType.CHROME,
+            variant=BrowserVariant.NATIVE,
+            profile_path="/home/test/.config/google-chrome",
+        )
+        subpaths = " ".join(profile.target_subpaths).lower()
+        self.assertIn("bookmark", subpaths)
+        self.assertIn("history", subpaths)
+        self.assertIn("cache", subpaths)
+        self.assertIn("cookies", subpaths)
+        self.assertIn("places.sqlite", subpaths)
+        self.assertIn("bookmarks.plist", subpaths)
+        self.assertIn("history.db", subpaths)
+
 
 
 

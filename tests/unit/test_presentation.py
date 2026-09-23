@@ -402,6 +402,210 @@ class TestPresentationWiring(unittest.TestCase):
         res2 = apply_win98_ttk_theme(mock_root)
 
 
+    def test_win98_theme_notebook_tab_highlight(self) -> None:
+        from unittest.mock import MagicMock
+        from netejator98.presentation.win98_theme import (
+            WIN98_BLUE_START,
+            WIN98_WHITE,
+            apply_win98_ttk_theme,
+        )
+
+        from tkinter import ttk
+        mock_style = MagicMock(spec=ttk.Style)
+        mock_style.theme_names.return_value = ["classic", "default"]
+        apply_win98_ttk_theme(mock_style)
+
+        # Verify style.map was called for TNotebook.Tab with highlight styling
+        tab_map_calls = [
+            call for call in mock_style.map.call_args_list if call[0] and call[0][0] == "TNotebook.Tab"
+        ]
+        self.assertTrue(len(tab_map_calls) > 0)
+        _, kwargs = tab_map_calls[0]
+        self.assertIn("background", kwargs)
+        self.assertIn("foreground", kwargs)
+        # Verify selected background is white and foreground is navy blue
+        bg_map = dict(kwargs["background"])
+        fg_map = dict(kwargs["foreground"])
+        self.assertEqual(bg_map.get("selected"), WIN98_WHITE)
+        self.assertEqual(fg_map.get("selected"), WIN98_BLUE_START)
+
+    def test_admin_view_policy_tab_immediate_auto_save_and_buttons(self) -> None:
+        from unittest.mock import MagicMock, patch
+        from netejator98.presentation.admin_view import AdminView
+
+        mock_vm = MagicMock()
+        mock_vm.fetch_policy.return_value = {
+            "dry_run": True,
+            "always_clean_on_boot": False,
+            "secure_delete": False,
+            "thorough_logging": False,
+            "retention_days": 365,
+            "targets": [{"name": "Downloads", "enabled": True}],
+            "protected_paths": [],
+        }
+        mock_vm.save_policy.return_value = True
+
+        mock_parent = MagicMock()
+        av = AdminView(mock_vm, parent=mock_parent)
+
+        button_texts = []
+
+        def fake_create_button(parent, text="", command=None, **kwargs):
+            button_texts.append(text)
+            btn = MagicMock()
+            return btn
+
+        checkbutton_commands = []
+
+        def fake_checkbutton(*args, **kwargs):
+            if "command" in kwargs and kwargs["command"]:
+                checkbutton_commands.append(kwargs["command"])
+            return MagicMock()
+
+        spinbox_instances = []
+
+        def fake_spinbox(*args, **kwargs):
+            sp = MagicMock()
+            if "command" in kwargs and kwargs["command"]:
+                checkbutton_commands.append(kwargs["command"])
+            spinbox_instances.append(sp)
+            return sp
+
+        with patch("netejator98.presentation.admin_view.create_win98_button", side_effect=fake_create_button), \
+             patch("tkinter.Checkbutton", side_effect=fake_checkbutton), \
+             patch("tkinter.Spinbox", side_effect=fake_spinbox), \
+             patch("tkinter.Frame"), patch("tkinter.Canvas"), patch("tkinter.Label"), \
+             patch("tkinter.ttk.Treeview"), patch("tkinter.ttk.Scrollbar"), \
+             patch("tkinter.BooleanVar"), patch("tkinter.StringVar"):
+            mock_frame = MagicMock()
+            av._build_policy_tab(mock_frame)
+
+            # 1. Verify "desar politica", "recarregar", and "restablir per defecte" buttons are NOT present
+            lower_button_texts = [str(b).lower() for b in button_texts]
+            self.assertFalse(any("desar política" in bt or "desar politica" in bt for bt in lower_button_texts))
+            self.assertFalse(any("recarregar" in bt for bt in lower_button_texts))
+            self.assertFalse(any("restablir per defecte" in bt for bt in lower_button_texts))
+
+            # 2. Verify Add, Delete, and Edit target buttons ARE present and in order
+            self.assertTrue(any(t("policy_add_btn") in bt for bt in button_texts))
+            self.assertTrue(any(t("policy_delete_btn") in bt for bt in button_texts))
+            self.assertTrue(any(t("policy_edit_btn") in bt for bt in button_texts))
+            add_idx = next(i for i, bt in enumerate(button_texts) if t("policy_add_btn") in bt)
+            del_idx = next(i for i, bt in enumerate(button_texts) if t("policy_delete_btn") in bt)
+            self.assertLess(add_idx, del_idx)
+
+            # 3. Verify all 4 Checkbuttons wired auto_save
+            self.assertGreaterEqual(len(checkbutton_commands), 4)
+
+            # 4. Trigger auto_save via _save_current_policy and verify immediate persistence
+            self.assertTrue(hasattr(av, "_save_current_policy"))
+            saved = av._save_current_policy(quiet=True)
+            self.assertTrue(saved)
+            mock_vm.save_policy.assert_called()
+
+    def test_admin_view_policy_tab_packing_order_and_delete_binding(self) -> None:
+        from unittest.mock import MagicMock, patch
+        from netejator98.presentation.admin_view import AdminView
+
+        mock_vm = MagicMock()
+        mock_vm.fetch_policy.return_value = {
+            "dry_run": True,
+            "targets": [{"name": "Downloads", "enabled": True}],
+        }
+        mock_parent = MagicMock()
+        av = AdminView(mock_vm, parent=mock_parent)
+
+        mock_tree = MagicMock()
+        bound_tree_events = {}
+        mock_tree.bind.side_effect = lambda evt, cb: bound_tree_events.update({evt: cb})
+
+        pack_calls = []
+        def fake_frame(*args, **kwargs):
+            f = MagicMock()
+            f.pack.side_effect = lambda **p_kwargs: pack_calls.append((f, p_kwargs))
+            return f
+
+        with patch("netejator98.presentation.admin_view.create_win98_button"), \
+             patch("tkinter.Checkbutton"), patch("tkinter.Spinbox"), \
+             patch("tkinter.Frame", side_effect=fake_frame), \
+             patch("tkinter.Canvas"), patch("tkinter.Label"), \
+             patch("tkinter.ttk.Treeview", return_value=mock_tree), \
+             patch("tkinter.ttk.Scrollbar"), \
+             patch("tkinter.BooleanVar"), patch("tkinter.StringVar"):
+            mock_frame = MagicMock()
+            av._build_policy_tab(mock_frame)
+
+            # Verify <Delete> is bound on policy treeview
+            self.assertIn("<Delete>", bound_tree_events)
+            self.assertIn("<Double-1>", bound_tree_events)
+            self.assertIn("<space>", bound_tree_events)
+
+            # Verify that in targets frame, side=RIGHT is packed before side=LEFT
+            side_packings = [p_kwargs.get("side") for _, p_kwargs in pack_calls if "side" in p_kwargs]
+            # Find the index of the first RIGHT packing for buttons and LEFT packing for tree
+            right_indices = [i for i, s in enumerate(side_packings) if str(s) == "right"]
+            left_indices = [i for i, s in enumerate(side_packings) if str(s) == "left"]
+            self.assertTrue(len(right_indices) > 0)
+            self.assertTrue(len(left_indices) > 0)
+            # The button panel (side=RIGHT) must be packed before the expanding treeview (side=LEFT)
+            self.assertLess(right_indices[0], left_indices[-1])
+
+
+    def test_admin_dashboard_active_tab_highlight(self) -> None:
+        from unittest.mock import MagicMock, patch
+        from netejator98.presentation.admin_view import AdminView
+
+        mock_vm = MagicMock()
+        mock_vm.is_authenticated = True
+        mock_parent = MagicMock()
+        av = AdminView(mock_vm, parent=mock_parent)
+
+        mock_notebook = MagicMock()
+        mock_notebook.tabs.return_value = ["tab0", "tab1", "tab2", "tab3"]
+
+        frames_added = []
+        def fake_add(frame, **kwargs):
+            frames_added.append(frame)
+
+        mock_notebook.add.side_effect = fake_add
+
+        tab_texts = {}
+        def fake_tab(idx, **kwargs):
+            if "text" in kwargs:
+                tab_texts[idx] = kwargs["text"]
+            return {"text": tab_texts.get(idx, "")}
+
+        mock_notebook.tab.side_effect = fake_tab
+
+        bound_events = {}
+        def fake_bind(evt, cb):
+            bound_events[evt] = cb
+
+        mock_notebook.bind.side_effect = fake_bind
+
+        with patch("tkinter.Toplevel"), patch("netejator98.presentation.admin_view.create_win98_window_frame"), \
+             patch("netejator98.presentation.admin_view.Win98TitleBar"), \
+             patch("tkinter.Frame", side_effect=lambda *args, **kwargs: MagicMock()), \
+             patch("tkinter.ttk.Notebook", return_value=mock_notebook), \
+             patch("tkinter.BooleanVar"), patch("tkinter.StringVar"), \
+             patch.object(av, "_build_audit_tab"), patch.object(av, "_build_policy_tab"), \
+             patch.object(av, "_build_golden_tab"), patch.object(av, "_build_maintenance_tab"), \
+             patch("netejator98.presentation.admin_view.create_win98_button"):
+            # Set selected tab to match the second tab (Cleaning Policy)
+            def fake_select():
+                return str(frames_added[1]) if len(frames_added) > 1 else ""
+            mock_notebook.select.side_effect = fake_select
+
+            av._show_dashboard()
+
+            self.assertIn("<<NotebookTabChanged>>", bound_events)
+            cb = bound_events["<<NotebookTabChanged>>"]
+            cb()
+            # Active tab (index 1) has "▶" highlight
+            self.assertIn("▶", tab_texts[1])
+            self.assertNotIn("▶", tab_texts[0])
+
+
 if __name__ == "__main__":
     unittest.main()
 

@@ -365,6 +365,7 @@ imported by:
  &#8226;   <a href="#netejator98.sanitisation.application.build_plan">netejator98.sanitisation.application.build_plan</a>
  &#8226;   <a href="#netejator98.sanitisation.application.dry_run">netejator98.sanitisation.application.dry_run</a>
  &#8226;   <a href="#netejator98.sanitisation.application.execute">netejator98.sanitisation.application.execute</a>
+ &#8226;   <a href="#netejator98.sanitisation.application.logger">netejator98.sanitisation.application.logger</a>
  &#8226;   <a href="#netejator98.sanitisation.application.ports">netejator98.sanitisation.application.ports</a>
  &#8226;   <a href="#netejator98.sanitisation.application.restore_shortcuts">netejator98.sanitisation.application.restore_shortcuts</a>
  &#8226;   <a href="#netejator98.sanitisation.domain.browser">netejator98.sanitisation.domain.browser</a>
@@ -3602,6 +3603,7 @@ imported by:
  &#8226;   <a href="#netejator98.presentation.kiosk_view">netejator98.presentation.kiosk_view</a>
  &#8226;   <a href="#netejator98.sanitisation.application.dry_run">netejator98.sanitisation.application.dry_run</a>
  &#8226;   <a href="#netejator98.sanitisation.application.execute">netejator98.sanitisation.application.execute</a>
+ &#8226;   <a href="#netejator98.sanitisation.application.logger">netejator98.sanitisation.application.logger</a>
  &#8226;   <a href="#netejator98.sanitisation.domain.outcome">netejator98.sanitisation.domain.outcome</a>
  &#8226;   <a href="#netejator98.shared.clock">netejator98.shared.clock</a>
  &#8226;   <a href="#netejator98.shared.event_bus">netejator98.shared.event_bus</a>
@@ -7132,6 +7134,7 @@ imports:
  &#8226;   <a href="#importlib">importlib</a>
  &#8226;   <a href="#importlib._bootstrap">importlib._bootstrap</a>
  &#8226;   <a href="#importlib._bootstrap_external">importlib._bootstrap_external</a>
+ &#8226;   <a href="#importlib.machinery">importlib.machinery</a>
  &#8226;   <a href="#sys">sys</a>
  &#8226;   <a href="#warnings">warnings</a>
 
@@ -7262,7 +7265,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#importlib.abc">importlib.abc</a>
+    <a href="#importlib">importlib</a>
+ &#8226;   <a href="#importlib.abc">importlib.abc</a>
  &#8226;   <a href="#inspect">inspect</a>
  &#8226;   <a href="#py_compile">py_compile</a>
 
@@ -9196,6 +9200,7 @@ imports:
  &#8226;   <a href="#netejator98.sanitisation.application.restore_shortcuts">netejator98.sanitisation.application.restore_shortcuts</a>
  &#8226;   <a href="#netejator98.sanitisation.domain.path_pattern">netejator98.sanitisation.domain.path_pattern</a>
  &#8226;   <a href="#netejator98.sanitisation.domain.policy">netejator98.sanitisation.domain.policy</a>
+ &#8226;   <a href="#netejator98.sanitisation.domain.strategy">netejator98.sanitisation.domain.strategy</a>
  &#8226;   <a href="#netejator98.sanitisation.domain.target">netejator98.sanitisation.domain.target</a>
  &#8226;   <a href="#netejator98.sanitisation.infrastructure.credential_adapter">netejator98.sanitisation.infrastructure.credential_adapter</a>
  &#8226;   <a href="#netejator98.sanitisation.infrastructure.linux_paths">netejator98.sanitisation.infrastructure.linux_paths</a>
@@ -9950,6 +9955,7 @@ imported by:
     <a href="#netejator98.sanitisation.application.build_plan">netejator98.sanitisation.application.build_plan</a>
  &#8226;   <a href="#netejator98.sanitisation.application.dry_run">netejator98.sanitisation.application.dry_run</a>
  &#8226;   <a href="#netejator98.sanitisation.application.execute">netejator98.sanitisation.application.execute</a>
+ &#8226;   <a href="#netejator98.sanitisation.application.logger">netejator98.sanitisation.application.logger</a>
  &#8226;   <a href="#netejator98.sanitisation.application.ports">netejator98.sanitisation.application.ports</a>
  &#8226;   <a href="#netejator98.sanitisation.application.restore_shortcuts">netejator98.sanitisation.application.restore_shortcuts</a>
 
@@ -9991,6 +9997,7 @@ imports:
  &#8226;   <a href="#datetime">datetime</a>
  &#8226;   <a href="#netejator98.sanitisation.application">netejator98.sanitisation.application</a>
  &#8226;   <a href="#netejator98.sanitisation.application.build_plan">netejator98.sanitisation.application.build_plan</a>
+ &#8226;   <a href="#netejator98.sanitisation.application.logger">netejator98.sanitisation.application.logger</a>
  &#8226;   <a href="#netejator98.sanitisation.application.ports">netejator98.sanitisation.application.ports</a>
  &#8226;   <a href="#netejator98.sanitisation.domain.outcome">netejator98.sanitisation.domain.outcome</a>
  &#8226;   <a href="#netejator98.sanitisation.domain.policy">netejator98.sanitisation.domain.policy</a>
@@ -10017,6 +10024,7 @@ imports:
  &#8226;   <a href="#datetime">datetime</a>
  &#8226;   <a href="#netejator98.sanitisation.application">netejator98.sanitisation.application</a>
  &#8226;   <a href="#netejator98.sanitisation.application.build_plan">netejator98.sanitisation.application.build_plan</a>
+ &#8226;   <a href="#netejator98.sanitisation.application.logger">netejator98.sanitisation.application.logger</a>
  &#8226;   <a href="#netejator98.sanitisation.application.ports">netejator98.sanitisation.application.ports</a>
  &#8226;   <a href="#netejator98.sanitisation.domain.events">netejator98.sanitisation.domain.events</a>
  &#8226;   <a href="#netejator98.sanitisation.domain.outcome">netejator98.sanitisation.domain.outcome</a>
@@ -10033,6 +10041,30 @@ imports:
 imported by:
     <a href="#netejator98.agent.daemon">netejator98.agent.daemon</a>
  &#8226;   <a href="#netejator98.sanitisation.application">netejator98.sanitisation.application</a>
+
+  </div>
+
+</div>
+
+<div class="node">
+  <a name="netejator98.sanitisation.application.logger"></a>
+  <a target="code" href="/home/xavi/Documents/projects/professor/TIC/netejator98/src/netejator98/sanitisation/application/logger.py" type="text/plain"><tt>netejator98.sanitisation.application.logger</tt></a>
+<span class="moduletype">SourceModule</span>  <div class="import">
+imports:
+    <a href="#__future__">__future__</a>
+ &#8226;   <a href="#datetime">datetime</a>
+ &#8226;   <a href="#netejator98.sanitisation.application">netejator98.sanitisation.application</a>
+ &#8226;   <a href="#os">os</a>
+ &#8226;   <a href="#pathlib">pathlib</a>
+ &#8226;   <a href="#sys">sys</a>
+ &#8226;   <a href="#tempfile">tempfile</a>
+ &#8226;   <a href="#typing">typing</a>
+
+  </div>
+  <div class="import">
+imported by:
+    <a href="#netejator98.sanitisation.application.dry_run">netejator98.sanitisation.application.dry_run</a>
+ &#8226;   <a href="#netejator98.sanitisation.application.execute">netejator98.sanitisation.application.execute</a>
 
   </div>
 
@@ -10329,7 +10361,8 @@ imports:
   </div>
   <div class="import">
 imported by:
-    <a href="#netejator98.presentation.admin_view">netejator98.presentation.admin_view</a>
+    <a href="#netejator98.agent.daemon">netejator98.agent.daemon</a>
+ &#8226;   <a href="#netejator98.presentation.admin_view">netejator98.presentation.admin_view</a>
  &#8226;   <a href="#netejator98.sanitisation.application.execute">netejator98.sanitisation.application.execute</a>
  &#8226;   <a href="#netejator98.sanitisation.domain">netejator98.sanitisation.domain</a>
  &#8226;   <a href="#netejator98.sanitisation.domain.plan">netejator98.sanitisation.domain.plan</a>
@@ -10953,6 +10986,7 @@ imported by:
  &#8226;   <a href="#netejator98.audit.infrastructure.sealed_repo">netejator98.audit.infrastructure.sealed_repo</a>
  &#8226;   <a href="#netejator98.composition_root">netejator98.composition_root</a>
  &#8226;   <a href="#netejator98.presentation.ipc_client">netejator98.presentation.ipc_client</a>
+ &#8226;   <a href="#netejator98.sanitisation.application.logger">netejator98.sanitisation.application.logger</a>
  &#8226;   <a href="#netejator98.sanitisation.application.restore_shortcuts">netejator98.sanitisation.application.restore_shortcuts</a>
  &#8226;   <a href="#netejator98.sanitisation.domain.path_pattern">netejator98.sanitisation.domain.path_pattern</a>
  &#8226;   <a href="#netejator98.sanitisation.infrastructure.browser_locator">netejator98.sanitisation.infrastructure.browser_locator</a>
@@ -11052,6 +11086,7 @@ imported by:
  &#8226;   <a href="#netejator98.audit.infrastructure.sealed_repo">netejator98.audit.infrastructure.sealed_repo</a>
  &#8226;   <a href="#netejator98.composition_root">netejator98.composition_root</a>
  &#8226;   <a href="#netejator98.presentation.ipc_client">netejator98.presentation.ipc_client</a>
+ &#8226;   <a href="#netejator98.sanitisation.application.logger">netejator98.sanitisation.application.logger</a>
  &#8226;   <a href="#netejator98.sanitisation.infrastructure.browser_locator">netejator98.sanitisation.infrastructure.browser_locator</a>
  &#8226;   <a href="#netejator98.sanitisation.infrastructure.linux_paths">netejator98.sanitisation.infrastructure.linux_paths</a>
  &#8226;   <a href="#netejator98.sanitisation.infrastructure.macos_paths">netejator98.sanitisation.infrastructure.macos_paths</a>
@@ -11939,6 +11974,7 @@ imported by:
  &#8226;   <a href="#main.py">main.py</a>
  &#8226;   <a href="#mimetypes">mimetypes</a>
  &#8226;   <a href="#nacl.bindings.crypto_pwhash">nacl.bindings.crypto_pwhash</a>
+ &#8226;   <a href="#netejator98.sanitisation.application.logger">netejator98.sanitisation.application.logger</a>
  &#8226;   <a href="#netejator98.sanitisation.application.restore_shortcuts">netejator98.sanitisation.application.restore_shortcuts</a>
  &#8226;   <a href="#ntpath">ntpath</a>
  &#8226;   <a href="#os">os</a>
@@ -12038,6 +12074,7 @@ imported by:
     <a href="#importlib.resources._common">importlib.resources._common</a>
  &#8226;   <a href="#netejator98.access.infrastructure.admin_repo">netejator98.access.infrastructure.admin_repo</a>
  &#8226;   <a href="#netejator98.access.infrastructure.last_user_repo">netejator98.access.infrastructure.last_user_repo</a>
+ &#8226;   <a href="#netejator98.sanitisation.application.logger">netejator98.sanitisation.application.logger</a>
  &#8226;   <a href="#urllib.request">urllib.request</a>
  &#8226;   <a href="#urllib.response">urllib.response</a>
 
@@ -12578,6 +12615,7 @@ imported by:
  &#8226;   <a href="#netejator98.sanitisation.application.build_plan">netejator98.sanitisation.application.build_plan</a>
  &#8226;   <a href="#netejator98.sanitisation.application.dry_run">netejator98.sanitisation.application.dry_run</a>
  &#8226;   <a href="#netejator98.sanitisation.application.execute">netejator98.sanitisation.application.execute</a>
+ &#8226;   <a href="#netejator98.sanitisation.application.logger">netejator98.sanitisation.application.logger</a>
  &#8226;   <a href="#netejator98.sanitisation.application.ports">netejator98.sanitisation.application.ports</a>
  &#8226;   <a href="#netejator98.sanitisation.application.restore_shortcuts">netejator98.sanitisation.application.restore_shortcuts</a>
  &#8226;   <a href="#netejator98.sanitisation.domain.browser">netejator98.sanitisation.domain.browser</a>

@@ -83,6 +83,162 @@ targets:
       - ".var/app/org.mozilla.firefox/*"
       - ".var/app/com.brave.Browser/*"
 
+  - name: BrowserGoogleChrome
+    os: Linux
+    category: BROWSER_PROFILES
+    description: "Google Chrome - Historial, preferits, memòria cau, galetes i sessions (Linux)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - ".config/google-chrome/Default/Bookmarks*"
+      - ".config/google-chrome/Default/History*"
+      - ".config/google-chrome/Default/Favicons*"
+      - ".config/google-chrome/Default/Top Sites*"
+      - ".config/google-chrome/Default/Visited Links"
+      - ".config/google-chrome/Default/Shortcuts*"
+      - ".config/google-chrome/Default/Cookies*"
+      - ".config/google-chrome/Default/Network/Cookies*"
+      - ".config/google-chrome/Default/Login Data*"
+      - ".config/google-chrome/Default/Web Data*"
+      - ".config/google-chrome/Default/Sessions/*"
+      - ".config/google-chrome/Default/Current Session*"
+      - ".config/google-chrome/Default/Current Tabs*"
+      - ".config/google-chrome/Default/Last Session*"
+      - ".config/google-chrome/Default/Last Tabs*"
+      - ".config/google-chrome/Default/Cache/*"
+      - ".config/google-chrome/Default/Code Cache/*"
+      - ".config/google-chrome/Default/GPUCache/*"
+      - ".config/google-chrome/Default/Local Storage/*"
+      - ".config/google-chrome/Default/IndexedDB/*"
+      - ".config/google-chrome/Profile */*"
+      - ".config/google-chrome/ShaderCache/*"
+      - ".config/google-chrome/GrShaderCache/*"
+      - ".cache/google-chrome/*"
+      - ".var/app/com.google.Chrome/config/google-chrome/Default/*"
+      - ".var/app/com.google.Chrome/cache/google-chrome/*"
+
+  - name: BrowserMozillaFirefox
+    os: Linux
+    category: BROWSER_PROFILES
+    description: "Mozilla Firefox - Historial, marcadors (places), memòria cau, galetes i sessions (Linux)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - ".mozilla/firefox/*.default*/places.sqlite*"
+      - ".mozilla/firefox/*.default*/favicons.sqlite*"
+      - ".mozilla/firefox/*.default*/bookmarkbackups/*"
+      - ".mozilla/firefox/*.default*/cookies.sqlite*"
+      - ".mozilla/firefox/*.default*/logins.json"
+      - ".mozilla/firefox/*.default*/key4.db"
+      - ".mozilla/firefox/*.default*/formhistory.sqlite*"
+      - ".mozilla/firefox/*.default*/sessionstore*"
+      - ".mozilla/firefox/*.default*/storage/*"
+      - ".mozilla/firefox/*.default*/cache2/*"
+      - ".cache/mozilla/firefox/*"
+      - "snap/firefox/common/.mozilla/firefox/*.default*/*"
+      - "snap/firefox/common/.cache/mozilla/firefox/*"
+      - ".var/app/org.mozilla.firefox/.mozilla/firefox/*.default*/*"
+      - ".var/app/org.mozilla.firefox/cache/mozilla/firefox/*"
+
+  - name: BrowserMicrosoftEdge
+    os: Linux
+    category: BROWSER_PROFILES
+    description: "Microsoft Edge - Historial, preferits, memòria cau, galetes i credencials (Linux)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - ".config/microsoft-edge/Default/Bookmarks*"
+      - ".config/microsoft-edge/Default/History*"
+      - ".config/microsoft-edge/Default/Favicons*"
+      - ".config/microsoft-edge/Default/Top Sites*"
+      - ".config/microsoft-edge/Default/Visited Links"
+      - ".config/microsoft-edge/Default/Shortcuts*"
+      - ".config/microsoft-edge/Default/Cookies*"
+      - ".config/microsoft-edge/Default/Network/Cookies*"
+      - ".config/microsoft-edge/Default/Login Data*"
+      - ".config/microsoft-edge/Default/Web Data*"
+      - ".config/microsoft-edge/Default/Sessions/*"
+      - ".config/microsoft-edge/Default/Cache/*"
+      - ".config/microsoft-edge/Default/Code Cache/*"
+      - ".config/microsoft-edge/Default/GPUCache/*"
+      - ".config/microsoft-edge/Default/Local Storage/*"
+      - ".config/microsoft-edge/Default/IndexedDB/*"
+      - ".config/microsoft-edge/Profile */*"
+      - ".cache/microsoft-edge/*"
+      - ".var/app/com.microsoft.Edge/config/microsoft-edge/Default/*"
+
+  - name: BrowserBrave
+    os: Linux
+    category: BROWSER_PROFILES
+    description: "Brave Browser - Historial, preferits, memòria cau, galetes i sessions (Linux)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - ".config/BraveSoftware/Brave-Browser/Default/Bookmarks*"
+      - ".config/BraveSoftware/Brave-Browser/Default/History*"
+      - ".config/BraveSoftware/Brave-Browser/Default/Favicons*"
+      - ".config/BraveSoftware/Brave-Browser/Default/Top Sites*"
+      - ".config/BraveSoftware/Brave-Browser/Default/Cookies*"
+      - ".config/BraveSoftware/Brave-Browser/Default/Network/Cookies*"
+      - ".config/BraveSoftware/Brave-Browser/Default/Login Data*"
+      - ".config/BraveSoftware/Brave-Browser/Default/Web Data*"
+      - ".config/BraveSoftware/Brave-Browser/Default/Sessions/*"
+      - ".config/BraveSoftware/Brave-Browser/Default/Cache/*"
+      - ".config/BraveSoftware/Brave-Browser/Default/Code Cache/*"
+      - ".config/BraveSoftware/Brave-Browser/Default/Local Storage/*"
+      - ".config/BraveSoftware/Brave-Browser/Default/IndexedDB/*"
+      - ".config/BraveSoftware/Brave-Browser/Profile */*"
+      - ".cache/BraveSoftware/Brave-Browser/*"
+      - "snap/brave/current/.config/BraveSoftware/Brave-Browser/Default/*"
+      - ".var/app/com.brave.Browser/config/BraveSoftware/Brave-Browser/Default/*"
+
+  - name: BrowserOpera
+    os: Linux
+    category: BROWSER_PROFILES
+    description: "Opera - Historial, preferits, memòria cau, galetes i sessions (Linux)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - ".config/opera/Bookmarks*"
+      - ".config/opera/History*"
+      - ".config/opera/Favicons*"
+      - ".config/opera/Top Sites*"
+      - ".config/opera/Cookies*"
+      - ".config/opera/Network/Cookies*"
+      - ".config/opera/Login Data*"
+      - ".config/opera/Web Data*"
+      - ".config/opera/Sessions/*"
+      - ".config/opera/Local Storage/*"
+      - ".config/opera/IndexedDB/*"
+      - ".cache/opera/*"
+      - "snap/opera/current/.config/opera/*"
+
+  - name: BrowserChromium
+    os: Linux
+    category: BROWSER_PROFILES
+    description: "Chromium - Historial, marcadors, memòria cau i perfils d'usuari (Linux)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - ".config/chromium/Default/Bookmarks*"
+      - ".config/chromium/Default/History*"
+      - ".config/chromium/Default/Favicons*"
+      - ".config/chromium/Default/Top Sites*"
+      - ".config/chromium/Default/Visited Links"
+      - ".config/chromium/Default/Cookies*"
+      - ".config/chromium/Default/Network/Cookies*"
+      - ".config/chromium/Default/Login Data*"
+      - ".config/chromium/Default/Web Data*"
+      - ".config/chromium/Default/Sessions/*"
+      - ".config/chromium/Default/Cache/*"
+      - ".config/chromium/Default/Code Cache/*"
+      - ".config/chromium/Default/Local Storage/*"
+      - ".config/chromium/Default/IndexedDB/*"
+      - ".config/chromium/Profile */*"
+      - ".cache/chromium/*"
+      - "snap/chromium/current/.config/chromium/Default/*"
+      - ".var/app/org.chromium.Chromium/config/chromium/Default/*"
+
   - name: RecentFiles
     os: Linux
     category: RECENT_FILES
@@ -207,6 +363,144 @@ targets:
       - "AppData/Roaming/Mozilla/Firefox/Profiles/*"
       - "AppData/Local/BraveSoftware/Brave-Browser/User Data/*"
 
+  - name: BrowserGoogleChrome
+    os: Windows
+    category: BROWSER_PROFILES
+    description: "Google Chrome - Historial, preferits, memòria cau, galetes i sessions (Windows)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - "AppData/Local/Google/Chrome/User Data/Default/Bookmarks*"
+      - "AppData/Local/Google/Chrome/User Data/Default/History*"
+      - "AppData/Local/Google/Chrome/User Data/Default/Favicons*"
+      - "AppData/Local/Google/Chrome/User Data/Default/Top Sites*"
+      - "AppData/Local/Google/Chrome/User Data/Default/Visited Links"
+      - "AppData/Local/Google/Chrome/User Data/Default/Shortcuts*"
+      - "AppData/Local/Google/Chrome/User Data/Default/Cookies*"
+      - "AppData/Local/Google/Chrome/User Data/Default/Network/Cookies*"
+      - "AppData/Local/Google/Chrome/User Data/Default/Login Data*"
+      - "AppData/Local/Google/Chrome/User Data/Default/Web Data*"
+      - "AppData/Local/Google/Chrome/User Data/Default/Sessions/*"
+      - "AppData/Local/Google/Chrome/User Data/Default/Current Session*"
+      - "AppData/Local/Google/Chrome/User Data/Default/Current Tabs*"
+      - "AppData/Local/Google/Chrome/User Data/Default/Last Session*"
+      - "AppData/Local/Google/Chrome/User Data/Default/Last Tabs*"
+      - "AppData/Local/Google/Chrome/User Data/Default/Cache/*"
+      - "AppData/Local/Google/Chrome/User Data/Default/Code Cache/*"
+      - "AppData/Local/Google/Chrome/User Data/Default/GPUCache/*"
+      - "AppData/Local/Google/Chrome/User Data/Default/Local Storage/*"
+      - "AppData/Local/Google/Chrome/User Data/Default/IndexedDB/*"
+      - "AppData/Local/Google/Chrome/User Data/Profile */*"
+      - "AppData/Local/Google/Chrome/User Data/ShaderCache/*"
+
+  - name: BrowserMozillaFirefox
+    os: Windows
+    category: BROWSER_PROFILES
+    description: "Mozilla Firefox - Historial, marcadors (places), memòria cau, galetes i sessions (Windows)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - "AppData/Roaming/Mozilla/Firefox/Profiles/*.default*/places.sqlite*"
+      - "AppData/Roaming/Mozilla/Firefox/Profiles/*.default*/favicons.sqlite*"
+      - "AppData/Roaming/Mozilla/Firefox/Profiles/*.default*/bookmarkbackups/*"
+      - "AppData/Roaming/Mozilla/Firefox/Profiles/*.default*/cookies.sqlite*"
+      - "AppData/Roaming/Mozilla/Firefox/Profiles/*.default*/logins.json"
+      - "AppData/Roaming/Mozilla/Firefox/Profiles/*.default*/key4.db"
+      - "AppData/Roaming/Mozilla/Firefox/Profiles/*.default*/formhistory.sqlite*"
+      - "AppData/Roaming/Mozilla/Firefox/Profiles/*.default*/sessionstore*"
+      - "AppData/Roaming/Mozilla/Firefox/Profiles/*.default*/storage/*"
+      - "AppData/Local/Mozilla/Firefox/Profiles/*.default*/cache2/*"
+      - "AppData/Local/Mozilla/Firefox/Profiles/*.default*/jumpListCache/*"
+      - "AppData/Local/Mozilla/Firefox/Profiles/*.default*/startupCache/*"
+
+  - name: BrowserMicrosoftEdge
+    os: Windows
+    category: BROWSER_PROFILES
+    description: "Microsoft Edge - Historial, preferits, memòria cau, galetes i credencials (Windows)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - "AppData/Local/Microsoft/Edge/User Data/Default/Bookmarks*"
+      - "AppData/Local/Microsoft/Edge/User Data/Default/History*"
+      - "AppData/Local/Microsoft/Edge/User Data/Default/Favicons*"
+      - "AppData/Local/Microsoft/Edge/User Data/Default/Top Sites*"
+      - "AppData/Local/Microsoft/Edge/User Data/Default/Visited Links"
+      - "AppData/Local/Microsoft/Edge/User Data/Default/Shortcuts*"
+      - "AppData/Local/Microsoft/Edge/User Data/Default/Cookies*"
+      - "AppData/Local/Microsoft/Edge/User Data/Default/Network/Cookies*"
+      - "AppData/Local/Microsoft/Edge/User Data/Default/Login Data*"
+      - "AppData/Local/Microsoft/Edge/User Data/Default/Web Data*"
+      - "AppData/Local/Microsoft/Edge/User Data/Default/Sessions/*"
+      - "AppData/Local/Microsoft/Edge/User Data/Default/Cache/*"
+      - "AppData/Local/Microsoft/Edge/User Data/Default/Code Cache/*"
+      - "AppData/Local/Microsoft/Edge/User Data/Default/GPUCache/*"
+      - "AppData/Local/Microsoft/Edge/User Data/Default/Local Storage/*"
+      - "AppData/Local/Microsoft/Edge/User Data/Default/IndexedDB/*"
+      - "AppData/Local/Microsoft/Edge/User Data/Profile */*"
+
+  - name: BrowserBrave
+    os: Windows
+    category: BROWSER_PROFILES
+    description: "Brave Browser - Historial, preferits, memòria cau, galetes i sessions (Windows)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - "AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/Bookmarks*"
+      - "AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/History*"
+      - "AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/Favicons*"
+      - "AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/Top Sites*"
+      - "AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/Cookies*"
+      - "AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/Network/Cookies*"
+      - "AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/Login Data*"
+      - "AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/Web Data*"
+      - "AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/Sessions/*"
+      - "AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/Cache/*"
+      - "AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/Code Cache/*"
+      - "AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/Local Storage/*"
+      - "AppData/Local/BraveSoftware/Brave-Browser/User Data/Default/IndexedDB/*"
+      - "AppData/Local/BraveSoftware/Brave-Browser/User Data/Profile */*"
+
+  - name: BrowserOpera
+    os: Windows
+    category: BROWSER_PROFILES
+    description: "Opera - Historial, preferits, memòria cau, galetes i sessions (Windows)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - "AppData/Roaming/Opera Software/Opera Stable/Bookmarks*"
+      - "AppData/Roaming/Opera Software/Opera Stable/History*"
+      - "AppData/Roaming/Opera Software/Opera Stable/Favicons*"
+      - "AppData/Roaming/Opera Software/Opera Stable/Top Sites*"
+      - "AppData/Roaming/Opera Software/Opera Stable/Cookies*"
+      - "AppData/Roaming/Opera Software/Opera Stable/Network/Cookies*"
+      - "AppData/Roaming/Opera Software/Opera Stable/Login Data*"
+      - "AppData/Roaming/Opera Software/Opera Stable/Web Data*"
+      - "AppData/Roaming/Opera Software/Opera Stable/Sessions/*"
+      - "AppData/Roaming/Opera Software/Opera Stable/Local Storage/*"
+      - "AppData/Roaming/Opera Software/Opera Stable/IndexedDB/*"
+      - "AppData/Local/Opera Software/Opera Stable/Cache/*"
+
+  - name: BrowserChromium
+    os: Windows
+    category: BROWSER_PROFILES
+    description: "Chromium - Historial, marcadors, memòria cau i perfils d'usuari (Windows)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - "AppData/Local/Chromium/User Data/Default/Bookmarks*"
+      - "AppData/Local/Chromium/User Data/Default/History*"
+      - "AppData/Local/Chromium/User Data/Default/Favicons*"
+      - "AppData/Local/Chromium/User Data/Default/Cookies*"
+      - "AppData/Local/Chromium/User Data/Default/Network/Cookies*"
+      - "AppData/Local/Chromium/User Data/Default/Login Data*"
+      - "AppData/Local/Chromium/User Data/Default/Web Data*"
+      - "AppData/Local/Chromium/User Data/Default/Sessions/*"
+      - "AppData/Local/Chromium/User Data/Default/Cache/*"
+      - "AppData/Local/Chromium/User Data/Default/Code Cache/*"
+      - "AppData/Local/Chromium/User Data/Default/Local Storage/*"
+      - "AppData/Local/Chromium/User Data/Default/IndexedDB/*"
+      - "AppData/Local/Chromium/User Data/Profile */*"
+
   - name: RecentFiles
     os: Windows
     category: RECENT_FILES
@@ -324,6 +618,138 @@ targets:
       - "Library/Application Support/Google/Chrome/*"
       - "Library/Application Support/Firefox/Profiles/*"
       - "Library/Safari/LocalStorage/*"
+
+  - name: BrowserGoogleChrome
+    os: macOS
+    category: BROWSER_PROFILES
+    description: "Google Chrome - Historial, preferits, memòria cau, galetes i sessions (macOS)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - "Library/Application Support/Google/Chrome/Default/Bookmarks*"
+      - "Library/Application Support/Google/Chrome/Default/History*"
+      - "Library/Application Support/Google/Chrome/Default/Favicons*"
+      - "Library/Application Support/Google/Chrome/Default/Top Sites*"
+      - "Library/Application Support/Google/Chrome/Default/Visited Links"
+      - "Library/Application Support/Google/Chrome/Default/Shortcuts*"
+      - "Library/Application Support/Google/Chrome/Default/Cookies*"
+      - "Library/Application Support/Google/Chrome/Default/Network/Cookies*"
+      - "Library/Application Support/Google/Chrome/Default/Login Data*"
+      - "Library/Application Support/Google/Chrome/Default/Web Data*"
+      - "Library/Application Support/Google/Chrome/Default/Sessions/*"
+      - "Library/Application Support/Google/Chrome/Default/Current Session*"
+      - "Library/Application Support/Google/Chrome/Default/Current Tabs*"
+      - "Library/Application Support/Google/Chrome/Default/Last Session*"
+      - "Library/Application Support/Google/Chrome/Default/Last Tabs*"
+      - "Library/Application Support/Google/Chrome/Default/Local Storage/*"
+      - "Library/Application Support/Google/Chrome/Default/IndexedDB/*"
+      - "Library/Application Support/Google/Chrome/Profile */*"
+      - "Library/Caches/Google/Chrome/*"
+      - "Library/Caches/com.google.Chrome/*"
+
+  - name: BrowserMozillaFirefox
+    os: macOS
+    category: BROWSER_PROFILES
+    description: "Mozilla Firefox - Historial, marcadors (places), memòria cau, galetes i sessions (macOS)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - "Library/Application Support/Firefox/Profiles/*.default*/places.sqlite*"
+      - "Library/Application Support/Firefox/Profiles/*.default*/favicons.sqlite*"
+      - "Library/Application Support/Firefox/Profiles/*.default*/bookmarkbackups/*"
+      - "Library/Application Support/Firefox/Profiles/*.default*/cookies.sqlite*"
+      - "Library/Application Support/Firefox/Profiles/*.default*/logins.json"
+      - "Library/Application Support/Firefox/Profiles/*.default*/key4.db"
+      - "Library/Application Support/Firefox/Profiles/*.default*/formhistory.sqlite*"
+      - "Library/Application Support/Firefox/Profiles/*.default*/sessionstore*"
+      - "Library/Application Support/Firefox/Profiles/*.default*/storage/*"
+      - "Library/Caches/Firefox/Profiles/*.default*/cache2/*"
+      - "Library/Caches/org.mozilla.firefox/*"
+
+  - name: BrowserMicrosoftEdge
+    os: macOS
+    category: BROWSER_PROFILES
+    description: "Microsoft Edge - Historial, preferits, memòria cau, galetes i credencials (macOS)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - "Library/Application Support/Microsoft Edge/Default/Bookmarks*"
+      - "Library/Application Support/Microsoft Edge/Default/History*"
+      - "Library/Application Support/Microsoft Edge/Default/Favicons*"
+      - "Library/Application Support/Microsoft Edge/Default/Top Sites*"
+      - "Library/Application Support/Microsoft Edge/Default/Visited Links"
+      - "Library/Application Support/Microsoft Edge/Default/Cookies*"
+      - "Library/Application Support/Microsoft Edge/Default/Network/Cookies*"
+      - "Library/Application Support/Microsoft Edge/Default/Login Data*"
+      - "Library/Application Support/Microsoft Edge/Default/Web Data*"
+      - "Library/Application Support/Microsoft Edge/Default/Sessions/*"
+      - "Library/Application Support/Microsoft Edge/Default/Local Storage/*"
+      - "Library/Application Support/Microsoft Edge/Default/IndexedDB/*"
+      - "Library/Application Support/Microsoft Edge/Profile */*"
+      - "Library/Caches/Microsoft Edge/*"
+      - "Library/Caches/com.microsoft.edgemac/*"
+
+  - name: BrowserBrave
+    os: macOS
+    category: BROWSER_PROFILES
+    description: "Brave Browser - Historial, preferits, memòria cau, galetes i sessions (macOS)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - "Library/Application Support/BraveSoftware/Brave-Browser/Default/Bookmarks*"
+      - "Library/Application Support/BraveSoftware/Brave-Browser/Default/History*"
+      - "Library/Application Support/BraveSoftware/Brave-Browser/Default/Favicons*"
+      - "Library/Application Support/BraveSoftware/Brave-Browser/Default/Top Sites*"
+      - "Library/Application Support/BraveSoftware/Brave-Browser/Default/Cookies*"
+      - "Library/Application Support/BraveSoftware/Brave-Browser/Default/Network/Cookies*"
+      - "Library/Application Support/BraveSoftware/Brave-Browser/Default/Login Data*"
+      - "Library/Application Support/BraveSoftware/Brave-Browser/Default/Web Data*"
+      - "Library/Application Support/BraveSoftware/Brave-Browser/Default/Sessions/*"
+      - "Library/Application Support/BraveSoftware/Brave-Browser/Default/Local Storage/*"
+      - "Library/Application Support/BraveSoftware/Brave-Browser/Default/IndexedDB/*"
+      - "Library/Application Support/BraveSoftware/Brave-Browser/Profile */*"
+      - "Library/Caches/BraveSoftware/Brave-Browser/*"
+
+  - name: BrowserOpera
+    os: macOS
+    category: BROWSER_PROFILES
+    description: "Opera - Historial, preferits, memòria cau, galetes i sessions (macOS)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - "Library/Application Support/com.operasoftware.Opera/Bookmarks*"
+      - "Library/Application Support/com.operasoftware.Opera/History*"
+      - "Library/Application Support/com.operasoftware.Opera/Favicons*"
+      - "Library/Application Support/com.operasoftware.Opera/Top Sites*"
+      - "Library/Application Support/com.operasoftware.Opera/Cookies*"
+      - "Library/Application Support/com.operasoftware.Opera/Network/Cookies*"
+      - "Library/Application Support/com.operasoftware.Opera/Login Data*"
+      - "Library/Application Support/com.operasoftware.Opera/Web Data*"
+      - "Library/Application Support/com.operasoftware.Opera/Sessions/*"
+      - "Library/Application Support/com.operasoftware.Opera/Local Storage/*"
+      - "Library/Application Support/com.operasoftware.Opera/IndexedDB/*"
+      - "Library/Caches/com.operasoftware.Opera/*"
+
+  - name: BrowserSafari
+    os: macOS
+    category: BROWSER_PROFILES
+    description: "Apple Safari - Historial, preferits, memòria cau, galetes i magatzem local (macOS)"
+    enabled: false
+    strategy: BROWSER_CLEAN
+    patterns:
+      - "Library/Safari/Bookmarks.plist"
+      - "Library/Safari/History.db*"
+      - "Library/Safari/TopSites.plist"
+      - "Library/Safari/Downloads.plist"
+      - "Library/Safari/LastSession.plist"
+      - "Library/Safari/Favicon Cache/*"
+      - "Library/Safari/Touch Icon Cache/*"
+      - "Library/Safari/LocalStorage/*"
+      - "Library/Safari/Databases/*"
+      - "Library/Safari/WebStorage/*"
+      - "Library/Cookies/Cookies.binarycookies"
+      - "Library/Caches/com.apple.Safari/*"
+      - "Library/Containers/com.apple.Safari/Data/Library/Caches/*"
 
   - name: RecentFiles
     os: macOS
