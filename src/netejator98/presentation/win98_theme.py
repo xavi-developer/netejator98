@@ -359,6 +359,14 @@ def _draw_win98_icon_impl(canvas: tk.Canvas, icon_type: str, x: int, y: int, siz
     else:
         # Default small retro square
         canvas.create_rectangle(x + 4 * s, y + 4 * s, x + 28 * s, y + 28 * s, fill=WIN98_GRAY, outline=WIN98_BLACK)
+
+
+def draw_win98_icon(canvas: tk.Canvas, icon_type: str, x: int, y: int, size: int = 32) -> None:
+    """Draw a crisp vector/pixel-art Windows 98 icon on the given canvas at (x, y)."""
+    _theme_dlog(f"[ICON-DRAW] type='{icon_type}' at ({x}, {y}) size={size}")
+    try:
+        s = size / 32.0  # Scale factor
+        _draw_win98_icon_impl(canvas, icon_type, x, y, size, s)
         _theme_dlog(f"[ICON-DRAW] Successfully rendered icon '{icon_type}'.")
     except Exception as e:
         _theme_dlog(f"[ICON-DRAW-ERR] Failed rendering icon '{icon_type}': {e}")
