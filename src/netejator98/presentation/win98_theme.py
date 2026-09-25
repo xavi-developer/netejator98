@@ -363,9 +363,32 @@ class Win98TitleBar(tk.Frame):
         self.is_dialog = is_dialog
         self.bar_height = height
 
-        # Gradient Canvas
+        # Control Buttons Container (Fixed Frame on the right, not embedded in Canvas)
+        has_buttons = (
+            (self.on_close is not None)
+            or (self.on_max is not None and not self.is_dialog)
+            or (self.on_min is not None and not self.is_dialog)
+        )
+        if has_buttons:
+            self.btn_frame = tk.Frame(self, bg=WIN98_BLUE_END)
+            self.btn_frame.pack(side=tk.RIGHT, fill=tk.Y, padx=(0, 3), pady=2)
+
+            # Pack in reverse right-to-left order: Close, Max, Min -> Visual order: [_] [□] [✕]
+            if self.on_close is not None:
+                close_btn = self._create_title_button(self.btn_frame, "✕", self.on_close, bold=True)
+                close_btn.pack(side=tk.RIGHT, padx=(2, 0))
+
+            if self.on_max is not None and not self.is_dialog:
+                max_btn = self._create_title_button(self.btn_frame, "□", self.on_max, bold=False)
+                max_btn.pack(side=tk.RIGHT, padx=(2, 0))
+
+            if self.on_min is not None and not self.is_dialog:
+                min_btn = self._create_title_button(self.btn_frame, "_", self.on_min, bold=True)
+                min_btn.pack(side=tk.RIGHT, padx=(2, 0))
+
+        # Gradient Canvas (occupies remaining width on the left)
         self.canvas = tk.Canvas(self, height=height, bg=WIN98_BLUE_START, highlightthickness=0, bd=0)
-        self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         self.canvas.bind("<Configure>", self._render_gradient)
 
@@ -376,6 +399,9 @@ class Win98TitleBar(tk.Frame):
         if self.target_window:
             self.canvas.bind("<Button-1>", self._on_drag_start)
             self.canvas.bind("<B1-Motion>", self._on_drag_motion)
+            if has_buttons:
+                self.btn_frame.bind("<Button-1>", self._on_drag_start)
+                self.btn_frame.bind("<B1-Motion>", self._on_drag_motion)
 
     def _find_toplevel(self, widget: Any) -> Optional[Any]:
         curr: Optional[Any] = widget
@@ -417,7 +443,7 @@ class Win98TitleBar(tk.Frame):
         self._render_gradient()
 
     def _render_gradient(self, event: Optional[tk.Event] = None) -> None:
-        width = self.winfo_width() or (event.width if event else 600)
+        width = self.canvas.winfo_width() or (event.width if event else 600)
         if width <= 1:
             width = 600
 
@@ -456,32 +482,15 @@ class Win98TitleBar(tk.Frame):
             fill=WIN98_TITLE_TEXT,
         )
 
-        # Place Control Buttons on the right
-        btn_y = 3
-        btn_w = 16
-        btn_h = 14
-        right_x = width - 4
-
-        # Close Button [X]
-        if self.on_close is not None:
-            close_btn = self._create_title_button("✕", self.on_close, bold=True)
-            self.canvas.create_window(right_x - btn_w, btn_y, anchor=tk.NW, window=close_btn, width=btn_w, height=btn_h)
-            right_x -= (btn_w + 3)
-
-        # Maximize Button [□]
-        if self.on_max is not None and not self.is_dialog:
-            max_btn = self._create_title_button("□", self.on_max, bold=False)
-            self.canvas.create_window(right_x - btn_w, btn_y, anchor=tk.NW, window=max_btn, width=btn_w, height=btn_h)
-            right_x -= (btn_w + 2)
-
-        # Minimize Button [_]
-        if self.on_min is not None and not self.is_dialog:
-            min_btn = self._create_title_button("_", self.on_min, bold=True)
-            self.canvas.create_window(right_x - btn_w, btn_y, anchor=tk.NW, window=min_btn, width=btn_w, height=btn_h)
-
-    def _create_title_button(self, symbol: str, command: Callable[[], None], bold: bool = False) -> tk.Button:
+    def _create_title_button(
+        self,
+        parent: tk.Widget,
+        symbol: str,
+        command: Callable[[], None],
+        bold: bool = False,
+    ) -> tk.Button:
         btn = tk.Button(
-            self.canvas,
+            parent,
             text=symbol,
             font=("Tahoma", 7, "bold" if bold else "normal"),
             bg=WIN98_GRAY,
@@ -490,7 +499,7 @@ class Win98TitleBar(tk.Frame):
             activeforeground=WIN98_BLACK,
             relief=tk.RAISED,
             bd=1,
-            padx=0,
+            padx=2,
             pady=0,
             command=command,
         )
