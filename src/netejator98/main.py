@@ -232,12 +232,22 @@ def main() -> None:
 
     try:
         if is_admin:
-            print("[Netejator98] Starting Administration Dashboard...", flush=True)
-            print("[DEBUG-MAIN] Calling create_admin_app(client)...", flush=True)
+            now_s = time.strftime("%H:%M:%S")
+            try:
+                os.write(2, f"[{now_s}] [DEBUG-MAIN] Starting Administration Dashboard...\n".encode("utf-8"))
+                os.write(2, f"[{now_s}] [DEBUG-MAIN] Calling create_admin_app(client)...\n".encode("utf-8"))
+            except Exception:
+                pass
             app = create_admin_app(client)
-            print("[DEBUG-MAIN] create_admin_app returned successfully. Now calling app.show()...", flush=True)
+            try:
+                os.write(2, f"[{now_s}] [DEBUG-MAIN] create_admin_app returned successfully. Now calling app.show()...\n".encode("utf-8"))
+            except Exception:
+                pass
             app.show()
-            print("[DEBUG-MAIN] app.show() exited.", flush=True)
+            try:
+                os.write(2, f"[{now_s}] [DEBUG-MAIN] app.show() exited.\n".encode("utf-8"))
+            except Exception:
+                pass
         else:
             # Default: Kiosk prompt
             print("[Netejator98] Starting Kiosk User Interface...")

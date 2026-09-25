@@ -6,9 +6,27 @@ gradient title bars, pixel-art retro icons, and TTK widget theming.
 
 from __future__ import annotations
 
+import os
+import sys
+import time
 import tkinter as tk
 from tkinter import font as tkfont, ttk
+import traceback
 from typing import Any, Callable, Optional
+
+
+def _theme_dlog(msg: str) -> None:
+    """Direct unbuffered write to stderr for theme diagnostics."""
+    now_str = time.strftime("%H:%M:%S")
+    out = f"[{now_str}] [DEBUG-THEME] {msg}\n"
+    try:
+        os.write(2, out.encode("utf-8", errors="replace"))
+    except Exception:
+        pass
+    try:
+        sys.stderr.flush()
+    except Exception:
+        pass
 
 # ==============================================================================
 # Windows 98 Authentic Color Palette
@@ -40,19 +58,30 @@ _PREFERRED_FONTS = [
     "Helvetica",
 ]
 
+_DETECTED_FONT_FAMILY: Optional[str] = None
+
 
 def get_win98_font(size: int = 9, bold: bool = False, italic: bool = False) -> tuple[str, int, str]:
     """Return a Tk font tuple matching Windows 98 typography on the current system."""
-    family = "Tahoma"
-    try:
-        if getattr(tk, "_default_root", None) is not None:
-            available = set(tkfont.families())
-            for pref in _PREFERRED_FONTS:
-                if pref in available:
-                    family = pref
-                    break
-    except Exception:
+    global _DETECTED_FONT_FAMILY
+    if _DETECTED_FONT_FAMILY is None:
         family = "Tahoma"
+        try:
+            if getattr(tk, "_default_root", None) is not None:
+                _theme_dlog("[FONT] Initial font family detection via tkfont.families()...")
+                available = set(tkfont.families())
+                _theme_dlog(f"[FONT] tkfont.families() found {len(available)} families.")
+                for pref in _PREFERRED_FONTS:
+                    if pref in available:
+                        family = pref
+                        _theme_dlog(f"[FONT] Selected preferred font family: '{family}'")
+                        break
+        except Exception as e:
+            _theme_dlog(f"[FONT-WARN] Exception querying tkfont: {e}")
+            family = "Tahoma"
+        _DETECTED_FONT_FAMILY = family
+    else:
+        family = _DETECTED_FONT_FAMILY
 
     style_parts = []
     if bold:
@@ -204,10 +233,7 @@ def apply_win98_ttk_theme(root_or_style: Optional[Any] = None) -> Optional[ttk.S
 # Canvas-drawn Retro Pixel Art Icons
 # ==============================================================================
 
-def draw_win98_icon(canvas: tk.Canvas, icon_type: str, x: int, y: int, size: int = 32) -> None:
-    """Draw a crisp vector/pixel-art Windows 98 icon on the given canvas at (x, y)."""
-    s = size / 32.0  # Scale factor
-
+def _draw_win98_icon_impl(canvas: tk.Canvas, icon_type: str, x: int, y: int, size: int, s: float) -> None:
     if icon_type == "flag":
         # Windows 98 4-color flag (Red, Green, Blue, Yellow)
         # Red top-left, Green top-right, Blue bottom-left, Yellow bottom-right
@@ -333,6 +359,10 @@ def draw_win98_icon(canvas: tk.Canvas, icon_type: str, x: int, y: int, size: int
     else:
         # Default small retro square
         canvas.create_rectangle(x + 4 * s, y + 4 * s, x + 28 * s, y + 28 * s, fill=WIN98_GRAY, outline=WIN98_BLACK)
+        _theme_dlog(f"[ICON-DRAW] Successfully rendered icon '{icon_type}'.")
+    except Exception as e:
+        _theme_dlog(f"[ICON-DRAW-ERR] Failed rendering icon '{icon_type}': {e}")
+        _theme_dlog(traceback.format_exc())
 
 
 # ==============================================================================
@@ -391,6 +421,7 @@ class Win98TitleBar(tk.Frame):
         self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         self.canvas.bind("<Configure>", self._render_gradient)
+        _theme_dlog(f"[TITLEBAR] Initialized '{title}' (icon={icon_type}, is_dialog={is_dialog})")
 
         # Window Dragging support if parent is a window
         self._drag_start_x = 0
@@ -443,44 +474,50 @@ class Win98TitleBar(tk.Frame):
         self._render_gradient()
 
     def _render_gradient(self, event: Optional[tk.Event] = None) -> None:
-        width = self.canvas.winfo_width() or (event.width if event else 600)
-        if width <= 1:
-            width = 600
+        try:
+            width = self.canvas.winfo_width() or (event.width if event else 600)
+            if width <= 1:
+                width = 600
 
-        self.canvas.delete("all")
+            _theme_dlog(f"[TITLEBAR-GRAD] _render_gradient starting for '{self.title_text}', width={width}")
+            self.canvas.delete("all")
 
-        # Draw smooth horizontal gradient from #000080 to #1084d0
-        r1, g1, b1 = 0, 0, 128
-        r2, g2, b2 = 16, 132, 208
-        steps = min(64, max(8, width // 8))
+            # Draw smooth horizontal gradient from #000080 to #1084d0
+            r1, g1, b1 = 0, 0, 128
+            r2, g2, b2 = 16, 132, 208
+            steps = min(64, max(8, width // 8))
 
-        step_w = width / steps
-        for i in range(steps):
-            ratio = i / steps
-            r = int(r1 + (r2 - r1) * ratio)
-            g = int(g1 + (g2 - g1) * ratio)
-            b = int(b1 + (b2 - b1) * ratio)
-            color = f"#{r:02x}{g:02x}{b:02x}"
-            x0 = i * step_w
-            x1 = (i + 1) * step_w + 1
-            self.canvas.create_rectangle(x0, 0, x1, self.bar_height, fill=color, outline=color)
+            step_w = width / steps
+            for i in range(steps):
+                ratio = i / steps
+                r = int(r1 + (r2 - r1) * ratio)
+                g = int(g1 + (g2 - g1) * ratio)
+                b = int(b1 + (b2 - b1) * ratio)
+                color = f"#{r:02x}{g:02x}{b:02x}"
+                x0 = i * step_w
+                x1 = (i + 1) * step_w + 1
+                self.canvas.create_rectangle(x0, 0, x1, self.bar_height, fill=color, outline=color)
 
-        # Draw icon
-        text_x = 6
-        if self.icon_type:
-            draw_win98_icon(self.canvas, self.icon_type, 4, 3, size=18)
-            text_x = 26
+            # Draw icon
+            text_x = 6
+            if self.icon_type:
+                draw_win98_icon(self.canvas, self.icon_type, 4, 3, size=18)
+                text_x = 26
 
-        # Draw Title Text (Bold White)
-        font = get_win98_font(9, bold=True)
-        self.canvas.create_text(
-            text_x,
-            self.bar_height // 2,
-            text=self.title_text,
-            anchor=tk.W,
-            font=font,
-            fill=WIN98_TITLE_TEXT,
-        )
+            # Draw Title Text (Bold White)
+            font = get_win98_font(9, bold=True)
+            self.canvas.create_text(
+                text_x,
+                self.bar_height // 2,
+                text=self.title_text,
+                anchor=tk.W,
+                font=font,
+                fill=WIN98_TITLE_TEXT,
+            )
+            _theme_dlog(f"[TITLEBAR-GRAD] _render_gradient completed for '{self.title_text}'.")
+        except Exception as e:
+            _theme_dlog(f"[TITLEBAR-GRAD-ERR] Exception in _render_gradient: {e}")
+            _theme_dlog(traceback.format_exc())
 
     def _create_title_button(
         self,
@@ -531,50 +568,59 @@ def create_win98_button(
     If is_default is True, creates a 1px black outline frame around the button,
     matching the iconic Windows 98 default dialog button.
     """
-    btn_font = font or get_win98_font(9)
+    _theme_dlog(f"[BTN] Creating button text='{text}', is_default={is_default}")
+    try:
+        btn_font = font or get_win98_font(9)
 
-    if is_default:
-        # Wrapper frame providing the 1px black outline
-        outer = tk.Frame(parent, bg=WIN98_BLACK, bd=1)
-        btn = tk.Button(
-            outer,
-            text=text,
-            font=btn_font,
-            bg=WIN98_GRAY,
-            fg=WIN98_BLACK,
-            activebackground=WIN98_GRAY,
-            activeforeground=WIN98_BLACK,
-            relief=tk.RAISED,
-            bd=2,
-            padx=padx,
-            pady=pady,
-            width=width,
-            state=state,
-            command=command,
-        )
-        btn.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)
-        # Expose config methods on the outer wrapper for convenience
-        setattr(outer, "config", btn.config)
-        setattr(outer, "configure", btn.configure)
-        setattr(outer, "btn", btn)
-        return outer
-    else:
-        return tk.Button(
-            parent,
-            text=text,
-            font=btn_font,
-            bg=WIN98_GRAY,
-            fg=WIN98_BLACK,
-            activebackground=WIN98_GRAY,
-            activeforeground=WIN98_BLACK,
-            relief=tk.RAISED,
-            bd=2,
-            padx=padx,
-            pady=pady,
-            width=width,
-            state=state,
-            command=command,
-        )
+        if is_default:
+            # Wrapper frame providing the 1px black outline
+            outer = tk.Frame(parent, bg=WIN98_BLACK, bd=1)
+            btn = tk.Button(
+                outer,
+                text=text,
+                font=btn_font,
+                bg=WIN98_GRAY,
+                fg=WIN98_BLACK,
+                activebackground=WIN98_GRAY,
+                activeforeground=WIN98_BLACK,
+                relief=tk.RAISED,
+                bd=2,
+                padx=padx,
+                pady=pady,
+                width=width,
+                state=state,
+                command=command,
+            )
+            btn.pack(fill=tk.BOTH, expand=True, padx=1, pady=1)
+            # Expose config methods on the outer wrapper for convenience
+            setattr(outer, "config", btn.config)
+            setattr(outer, "configure", btn.configure)
+            setattr(outer, "btn", btn)
+            _theme_dlog(f"[BTN] Default button '{text}' created.")
+            return outer
+        else:
+            b = tk.Button(
+                parent,
+                text=text,
+                font=btn_font,
+                bg=WIN98_GRAY,
+                fg=WIN98_BLACK,
+                activebackground=WIN98_GRAY,
+                activeforeground=WIN98_BLACK,
+                relief=tk.RAISED,
+                bd=2,
+                padx=padx,
+                pady=pady,
+                width=width,
+                state=state,
+                command=command,
+            )
+            _theme_dlog(f"[BTN] Regular button '{text}' created.")
+            return b
+    except Exception as e:
+        _theme_dlog(f"[BTN-ERR] Failed creating button '{text}': {e}")
+        _theme_dlog(traceback.format_exc())
+        raise
 
 
 def create_win98_entry(
@@ -585,21 +631,29 @@ def create_win98_entry(
     font: Optional[tuple] = None,
 ) -> tk.Entry:
     """Create an authentic Windows 98 sunken text input field."""
-    entry_font = font or get_win98_font(9)
-    return tk.Entry(
-        parent,
-        textvariable=textvariable,
-        font=entry_font,
-        width=width,
-        show=show,
-        bg=WIN98_WHITE,
-        fg=WIN98_BLACK,
-        insertbackground=WIN98_BLACK,
-        selectbackground=WIN98_SELECTION,
-        selectforeground=WIN98_SELECTION_TEXT,
-        relief=tk.SUNKEN,
-        bd=2,
-    )
+    _theme_dlog(f"[ENTRY] Creating Entry width={width}, show={show}")
+    try:
+        entry_font = font or get_win98_font(9)
+        e = tk.Entry(
+            parent,
+            textvariable=textvariable,
+            font=entry_font,
+            width=width,
+            show=show,
+            bg=WIN98_WHITE,
+            fg=WIN98_BLACK,
+            insertbackground=WIN98_BLACK,
+            selectbackground=WIN98_SELECTION,
+            selectforeground=WIN98_SELECTION_TEXT,
+            relief=tk.SUNKEN,
+            bd=2,
+        )
+        _theme_dlog(f"[ENTRY] Entry created successfully.")
+        return e
+    except Exception as err:
+        _theme_dlog(f"[ENTRY-ERR] Failed creating Entry: {err}")
+        _theme_dlog(traceback.format_exc())
+        raise
 
 
 def create_win98_groupbox(parent: tk.Widget, text: str) -> tk.LabelFrame:

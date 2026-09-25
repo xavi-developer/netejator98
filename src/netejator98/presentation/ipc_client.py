@@ -5,11 +5,28 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import socket
+import sys
+import time
+import traceback
 from typing import Any, Dict, List, Optional
 
 from netejator98.agent.protocol import IPCCommands, IPCRequest, IPCResponse
 from netejator98.shared.errors import DomainError, IPCCommunicationError
 from netejator98.shared.result import Err, Ok, Result
+
+
+def _ipc_dlog(msg: str) -> None:
+    """Direct unbuffered write to stderr for IPC client diagnostics."""
+    now_str = time.strftime("%H:%M:%S")
+    out = f"[{now_str}] [DEBUG-IPC] {msg}\n"
+    try:
+        os.write(2, out.encode("utf-8", errors="replace"))
+    except Exception:
+        pass
+    try:
+        sys.stderr.flush()
+    except Exception:
+        pass
 
 
 class IPCClient:
@@ -34,10 +51,13 @@ class IPCClient:
     @property
     def in_process_daemon(self) -> Any:
         if self._in_process_daemon is None:
+            _ipc_dlog("[IPC-DAEMON] Initializing in-process AgentDaemon...")
             from netejator98.agent.daemon import AgentDaemon
             from netejator98.composition_root import get_default_storage_dir
             s_dir = self.storage_dir or get_default_storage_dir()
+            _ipc_dlog(f"[IPC-DAEMON] Using storage_dir: '{s_dir}'")
             self._in_process_daemon = AgentDaemon(storage_dir=s_dir)
+            _ipc_dlog("[IPC-DAEMON] AgentDaemon initialized successfully.")
         return self._in_process_daemon
 
     @property
@@ -45,15 +65,18 @@ class IPCClient:
         return self._is_in_process_mode
 
     def _send_request(self, request: IPCRequest) -> Result[IPCResponse, DomainError]:
+        _ipc_dlog(f"[IPC-REQ] Sending request: command='{request.command}'")
         # If socket path is configured and exists on disk, or port is configured, try socket first
         socket_exists = bool(self.socket_path and Path(self.socket_path).exists())
         if socket_exists or self.port:
             try:
                 if self.socket_path and socket_exists:
+                    _ipc_dlog(f"[IPC-REQ] Connecting to Unix socket: {self.socket_path}")
                     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
                     sock.settimeout(self.timeout)
                     sock.connect(self.socket_path)
                 elif self.port:
+                    _ipc_dlog(f"[IPC-REQ] Connecting to TCP port: {self.port}")
                     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     sock.settimeout(self.timeout)
                     sock.connect(("127.0.0.1", self.port))
@@ -73,20 +96,30 @@ class IPCClient:
                             response_line += chunk
 
                         if not response_line.strip():
+                            _ipc_dlog("[IPC-REQ-ERR] Empty response from agent daemon.")
                             return Err(IPCCommunicationError("Empty response from agent daemon"))
 
                         resp = IPCResponse.from_json(response_line.strip())
                         self._is_in_process_mode = False
+                        _ipc_dlog(f"[IPC-REQ-OK] Socket response received: status='{resp.status}'")
                         return Ok(resp)
             except OSError as e:
+                _ipc_dlog(f"[IPC-REQ-WARN] Socket communication failed: {e}")
                 if not self.allow_in_process_fallback:
                     return Err(IPCCommunicationError(f"Could not connect to Netejator98 agent daemon: {e}"))
 
         # Fallback to direct in-process execution when daemon service is not running
         if self.allow_in_process_fallback:
+            _ipc_dlog("[IPC-REQ] Fallback to direct in-process execution...")
             self._is_in_process_mode = True
-            resp = self.in_process_daemon.dispatch(request)
-            return Ok(resp)
+            try:
+                resp = self.in_process_daemon.dispatch(request)
+                _ipc_dlog(f"[IPC-REQ] In-process dispatch returned: status='{resp.status}'")
+                return Ok(resp)
+            except Exception as e:
+                _ipc_dlog(f"[IPC-REQ-ERR] In-process dispatch exception: {e}")
+                _ipc_dlog(traceback.format_exc())
+                raise
 
         return Err(IPCCommunicationError("Neither socket_path nor port configured or reachable for IPCClient"))
 

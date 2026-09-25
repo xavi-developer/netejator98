@@ -4,9 +4,13 @@ from __future__ import annotations
 
 import copy
 import json
+import os
 import platform
+import sys
+import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
+import traceback
 from typing import Any, Optional
 import yaml
 
@@ -34,44 +38,83 @@ from netejator98.presentation.win98_theme import (
 )
 
 
+def _dlog(msg: str) -> None:
+    """Direct, unbuffered write to stderr fd 2 to prevent losing logs upon native SIGSEGV."""
+    now_str = time.strftime("%H:%M:%S")
+    out = f"[{now_str}] [DEBUG-ADMIN] {msg}\n"
+    try:
+        os.write(2, out.encode("utf-8", errors="replace"))
+    except Exception:
+        pass
+    try:
+        sys.stderr.flush()
+    except Exception:
+        pass
+
+
 def _safe_modal_grab(window: tk.Toplevel) -> None:
     """Safely acquire modal grab, ignoring or deferring if X11 pointer is temporarily grabbed."""
     def _apply() -> None:
+        _dlog("[STEP GRAB-TIMER] _safe_modal_grab timer fired.")
         try:
             if window.winfo_exists():
+                _dlog("[STEP GRAB-APPLY] window exists, calling grab_set()...")
                 window.grab_set()
-        except tk.TclError:
-            pass
+                _dlog("[STEP GRAB-OK] window.grab_set() succeeded.")
+            else:
+                _dlog("[STEP GRAB-SKIP] window no longer exists.")
+        except tk.TclError as e:
+            _dlog(f"[STEP GRAB-WARN] TclError during grab_set: {e}")
+        except Exception as e:
+            _dlog(f"[STEP GRAB-ERR] Exception during grab_set: {e}")
 
     try:
+        _dlog("[STEP GRAB-SCHED] Scheduling window.after(50, _apply)...")
         window.after(50, _apply)
-    except Exception:
-        pass
+        _dlog("[STEP GRAB-SCHED-OK] window.after(50) scheduled.")
+    except Exception as e:
+        _dlog(f"[STEP GRAB-SCHED-ERR] Failed to schedule window.after: {e}")
 
 
 class AdminView:
     """Password-protected administration dialog for system administrators in Windows 98 aesthetic."""
 
     def __init__(self, view_model: AdminViewModel, parent: Optional[tk.Tk | tk.Toplevel] = None) -> None:
+        _dlog("[STEP INIT-001] AdminView.__init__ started.")
         self.vm = view_model
         self.parent = parent
         self.window: Optional[tk.Toplevel] = None
         self._standalone_root: Optional[tk.Tk] = None
 
         if self.parent is None:
+            _dlog("[STEP INIT-002] self.parent is None, inspecting tk._default_root...")
             if getattr(tk, "_default_root", None) is not None:
+                _dlog("[STEP INIT-003] Attached to existing tk._default_root.")
                 self.parent = tk._default_root
                 self._is_standalone = False
             else:
-                self._standalone_root = tk.Tk()
-                self._standalone_root.withdraw()
+                _dlog("[STEP INIT-004] No root found. Creating new tk.Tk() for _standalone_root...")
+                try:
+                    self._standalone_root = tk.Tk()
+                    _dlog(f"[STEP INIT-005] tk.Tk() instance created: {self._standalone_root}")
+                    self._standalone_root.withdraw()
+                    _dlog("[STEP INIT-006] _standalone_root.withdraw() executed.")
+                except Exception as e:
+                    _dlog(f"[ERROR INIT-004] Failed creating tk.Tk(): {e}")
+                    raise
                 self.parent = self._standalone_root
                 self._is_standalone = True
         else:
+            _dlog(f"[STEP INIT-007] Using provided parent window: {self.parent}")
             self._is_standalone = False
 
         if self.parent:
-            apply_win98_ttk_theme(self.parent)
+            _dlog("[STEP INIT-008] Calling apply_win98_ttk_theme(self.parent)...")
+            try:
+                apply_win98_ttk_theme(self.parent)
+                _dlog("[STEP INIT-009] apply_win98_ttk_theme completed.")
+            except Exception as e:
+                _dlog(f"[ERROR INIT-008] apply_win98_ttk_theme raised: {e}")
 
         self.policy_dry_run_var: Optional[tk.BooleanVar] = None
         self.policy_clean_boot_var: Optional[tk.BooleanVar] = None
@@ -79,44 +122,152 @@ class AdminView:
         self.policy_thorough_log_var: Optional[tk.BooleanVar] = None
         self.policy_retention_var: Optional[tk.StringVar] = None
         self.golden_shortcuts: list[dict[str, str]] = []
+        _dlog("[STEP INIT-010] AdminView.__init__ finished successfully.")
 
     def show(self) -> None:
         """Prompt for admin authentication or open dashboard if already authenticated."""
-        if not self.vm.is_authenticated:
-            self._show_login_dialog()
-        else:
-            self._show_dashboard()
+        _dlog("[STEP SHOW-100] Entering AdminView.show()...")
+        try:
+            _dlog("[STEP SHOW-101] Evaluating self.vm.is_authenticated...")
+            is_auth = self.vm.is_authenticated
+            _dlog(f"[STEP SHOW-102] self.vm.is_authenticated = {is_auth}")
+        except Exception as e:
+            _dlog(f"[ERROR SHOW-101] Exception checking is_authenticated: {e}")
+            is_auth = False
 
+        if not is_auth:
+            _dlog("[STEP SHOW-103] Not authenticated. Calling self._show_login_dialog()...")
+            try:
+                self._show_login_dialog()
+                _dlog("[STEP SHOW-104] self._show_login_dialog() returned normally.")
+            except Exception as e:
+                _dlog(f"[ERROR SHOW-103] Exception in _show_login_dialog: {e}")
+                _dlog(traceback.format_exc())
+                raise
+        else:
+            _dlog("[STEP SHOW-105] Authenticated. Calling self._show_dashboard()...")
+            try:
+                self._show_dashboard()
+                _dlog("[STEP SHOW-106] self._show_dashboard() returned normally.")
+            except Exception as e:
+                _dlog(f"[ERROR SHOW-105] Exception in _show_dashboard: {e}")
+                _dlog(traceback.format_exc())
+                raise
+
+        _dlog(f"[STEP SHOW-107] Checking standalone mainloop condition: _is_standalone={self._is_standalone}, root={self._standalone_root}")
         if self._is_standalone and self._standalone_root:
-            self._standalone_root.mainloop()
+            _dlog("[STEP SHOW-108] Calling self._standalone_root.mainloop() -> Entering Tk event dispatch...")
+            try:
+                self._standalone_root.mainloop()
+                _dlog("[STEP SHOW-109] self._standalone_root.mainloop() exited.")
+            except Exception as e:
+                _dlog(f"[ERROR SHOW-108] Exception inside mainloop(): {e}")
+                _dlog(traceback.format_exc())
+                raise
+        else:
+            _dlog("[STEP SHOW-110] Standalone mainloop not started (non-standalone or no root).")
 
     # ==========================================================================
     # Admin Authentication Dialog (Windows 98 Security Prompt)
     # ==========================================================================
 
     def _show_login_dialog(self) -> None:
-        dlg = tk.Toplevel(self.parent)
-        dlg.title(t("admin_title"))
-        dlg.geometry("460x280")
-        dlg.resizable(False, False)
-        dlg.configure(bg=WIN98_GRAY)
-        dlg.attributes("-topmost", True)
+        _dlog("[STEP DLG-200] Entering _show_login_dialog()...")
+
+        _dlog("[STEP DLG-201] Creating tk.Toplevel(self.parent)...")
+        try:
+            dlg = tk.Toplevel(self.parent)
+            _dlog(f"[STEP DLG-202] tk.Toplevel created: {dlg}")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-201] Failed creating tk.Toplevel: {e}")
+            raise
+
+        _dlog("[STEP DLG-203] Setting dialog title...")
+        try:
+            dlg.title(t("admin_title"))
+            _dlog("[STEP DLG-204] Title set.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-203] Failed setting title: {e}")
+
+        _dlog("[STEP DLG-205] Setting dialog geometry 460x280...")
+        try:
+            dlg.geometry("460x280")
+            _dlog("[STEP DLG-206] Geometry set.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-205] Failed setting geometry: {e}")
+
+        _dlog("[STEP DLG-207] Setting resizable(False, False)...")
+        try:
+            dlg.resizable(False, False)
+            _dlog("[STEP DLG-208] Resizable set.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-207] Failed setting resizable: {e}")
+
+        _dlog(f"[STEP DLG-209] Setting configure(bg={WIN98_GRAY})...")
+        try:
+            dlg.configure(bg=WIN98_GRAY)
+            _dlog("[STEP DLG-210] Background configured.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-209] Failed setting configure bg: {e}")
+
+        _dlog("[STEP DLG-211] Setting dlg.attributes('-topmost', True)...")
+        try:
+            dlg.attributes("-topmost", True)
+            _dlog("[STEP DLG-212] Topmost attribute set successfully.")
+        except Exception as e:
+            _dlog(f"[WARN DLG-211] dlg.attributes('-topmost') failed (ignored for safety): {e}")
 
         def on_dlg_close() -> None:
-            dlg.destroy()
+            _dlog("[STEP DLG-CLOSE] on_dlg_close callback triggered.")
+            try:
+                dlg.destroy()
+                _dlog("[STEP DLG-CLOSE-1] dlg.destroy() called.")
+            except Exception as e:
+                _dlog(f"[WARN DLG-CLOSE-1] dlg.destroy() failed: {e}")
+
             if self._is_standalone and not self.vm.is_authenticated:
                 if self._standalone_root:
-                    self._standalone_root.destroy()
+                    try:
+                        _dlog("[STEP DLG-CLOSE-2] Destroying _standalone_root...")
+                        self._standalone_root.destroy()
+                        _dlog("[STEP DLG-CLOSE-3] _standalone_root destroyed.")
+                    except Exception as e:
+                        _dlog(f"[WARN DLG-CLOSE-2] _standalone_root.destroy() failed: {e}")
 
-        dlg.protocol("WM_DELETE_WINDOW", on_dlg_close)
+        _dlog("[STEP DLG-213] Binding WM_DELETE_WINDOW protocol...")
+        try:
+            dlg.protocol("WM_DELETE_WINDOW", on_dlg_close)
+            _dlog("[STEP DLG-214] Protocol WM_DELETE_WINDOW bound.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-213] Failed binding protocol: {e}")
 
         # Outer 3D raised border
-        frame = create_win98_window_frame(dlg, bd=3)
-        frame.pack(fill=tk.BOTH, expand=True)
+        _dlog("[STEP DLG-215] Creating outer 3D window frame via create_win98_window_frame...")
+        try:
+            frame = create_win98_window_frame(dlg, bd=3)
+            _dlog(f"[STEP DLG-216] Outer frame created: {frame}. Packing...")
+            frame.pack(fill=tk.BOTH, expand=True)
+            _dlog("[STEP DLG-217] Outer frame packed.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-215] Failed creating/packing outer frame: {e}")
+            raise
 
-        is_first = self.vm.is_first_run()
-        status_res = self.vm.client.get_status()
-        is_offline = status_res.is_err()
+        _dlog("[STEP DLG-218] Querying self.vm.is_first_run()...")
+        try:
+            is_first = self.vm.is_first_run()
+            _dlog(f"[STEP DLG-219] is_first_run result = {is_first}")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-218] Exception in is_first_run(): {e}")
+            is_first = False
+
+        _dlog("[STEP DLG-220] Querying self.vm.client.get_status()...")
+        try:
+            status_res = self.vm.client.get_status()
+            is_offline = status_res.is_err()
+            _dlog(f"[STEP DLG-221] client.get_status() returned: is_err={is_offline}")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-220] Exception in client.get_status(): {e}")
+            is_offline = True
 
         title_text = "Configuració Inicial Administrador" if is_first else t("admin_title")
         sub_text = (
@@ -124,142 +275,292 @@ class AdminView:
             if is_first
             else t("admin_password_prompt")
         )
+        _dlog(f"[STEP DLG-222] Dialog text prepared: title='{title_text}', sub_text_len={len(sub_text)}")
 
         # Title bar with blue gradient
-        Win98TitleBar(
-            frame,
-            title="Seguretat de Netejator 98",
-            icon_type="key",
-            on_close=on_dlg_close,
-            is_dialog=True,
-            height=22,
-        ).pack(fill=tk.X)
+        _dlog("[STEP DLG-223] Creating Win98TitleBar...")
+        try:
+            title_bar = Win98TitleBar(
+                frame,
+                title="Seguretat de Netejator 98",
+                icon_type="key",
+                on_close=on_dlg_close,
+                is_dialog=True,
+                height=22,
+            )
+            _dlog(f"[STEP DLG-224] Win98TitleBar instantiated: {title_bar}. Packing...")
+            title_bar.pack(fill=tk.X)
+            _dlog("[STEP DLG-225] Win98TitleBar packed.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-223] Failed creating/packing Win98TitleBar: {e}")
+            _dlog(traceback.format_exc())
+            raise
 
-        body = tk.Frame(frame, bg=WIN98_GRAY, padx=16, pady=12)
-        body.pack(fill=tk.BOTH, expand=True)
+        _dlog("[STEP DLG-226] Creating body Frame...")
+        try:
+            body = tk.Frame(frame, bg=WIN98_GRAY, padx=16, pady=12)
+            body.pack(fill=tk.BOTH, expand=True)
+            _dlog("[STEP DLG-227] Body Frame packed.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-226] Failed body Frame: {e}")
+            raise
 
-        top_f = tk.Frame(body, bg=WIN98_GRAY)
-        top_f.pack(fill=tk.X, pady=(0, 10))
+        _dlog("[STEP DLG-228] Creating top_f Frame...")
+        try:
+            top_f = tk.Frame(body, bg=WIN98_GRAY)
+            top_f.pack(fill=tk.X, pady=(0, 10))
+            _dlog("[STEP DLG-229] top_f Frame packed.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-228] Failed top_f Frame: {e}")
+            raise
 
-        key_cv = tk.Canvas(top_f, width=36, height=36, bg=WIN98_GRAY, highlightthickness=0, bd=0)
-        key_cv.pack(side=tk.LEFT, padx=(0, 12))
-        draw_win98_icon(key_cv, "key", 2, 2, size=32)
+        _dlog("[STEP DLG-230] Creating key_cv Canvas (36x36)...")
+        try:
+            key_cv = tk.Canvas(top_f, width=36, height=36, bg=WIN98_GRAY, highlightthickness=0, bd=0)
+            key_cv.pack(side=tk.LEFT, padx=(0, 12))
+            _dlog("[STEP DLG-231] key_cv packed. Drawing 'key' icon...")
+            draw_win98_icon(key_cv, "key", 2, 2, size=32)
+            _dlog("[STEP DLG-232] 'key' icon drawn successfully.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-230] Failed key_cv / draw_win98_icon: {e}")
 
-        hdr_col = tk.Frame(top_f, bg=WIN98_GRAY)
-        hdr_col.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        _dlog("[STEP DLG-233] Creating hdr_col Frame...")
+        try:
+            hdr_col = tk.Frame(top_f, bg=WIN98_GRAY)
+            hdr_col.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            _dlog("[STEP DLG-234] hdr_col packed.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-233] Failed hdr_col: {e}")
+            raise
 
-        tk.Label(
-            hdr_col,
-            text=title_text,
-            font=get_win98_font(10, bold=True),
-            fg=WIN98_BLACK,
-            bg=WIN98_GRAY,
-            anchor=tk.W,
-        ).pack(fill=tk.X)
+        _dlog("[STEP DLG-235] Creating Title Label...")
+        try:
+            font_title = get_win98_font(10, bold=True)
+            _dlog(f"[STEP DLG-236] Font for title: {font_title}")
+            lbl_title = tk.Label(
+                hdr_col,
+                text=title_text,
+                font=font_title,
+                fg=WIN98_BLACK,
+                bg=WIN98_GRAY,
+                anchor=tk.W,
+            )
+            lbl_title.pack(fill=tk.X)
+            _dlog("[STEP DLG-237] Title Label packed.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-235] Failed Title Label: {e}")
 
-        tk.Label(
-            hdr_col,
-            text=sub_text,
-            font=get_win98_font(9),
-            fg=WIN98_BLACK,
-            bg=WIN98_GRAY,
-            wraplength=330,
-            justify=tk.LEFT,
-            anchor=tk.W,
-        ).pack(fill=tk.X, pady=(2, 0))
+        _dlog("[STEP DLG-238] Creating Subtext Label...")
+        try:
+            font_sub = get_win98_font(9)
+            _dlog(f"[STEP DLG-239] Font for subtext: {font_sub}")
+            lbl_sub = tk.Label(
+                hdr_col,
+                text=sub_text,
+                font=font_sub,
+                fg=WIN98_BLACK,
+                bg=WIN98_GRAY,
+                wraplength=330,
+                justify=tk.LEFT,
+                anchor=tk.W,
+            )
+            lbl_sub.pack(fill=tk.X, pady=(2, 0))
+            _dlog("[STEP DLG-240] Subtext Label packed.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-238] Failed Subtext Label: {e}")
 
         # Password input
-        pwd_f = tk.Frame(body, bg=WIN98_GRAY)
-        pwd_f.pack(fill=tk.X, pady=(4, 8))
+        _dlog("[STEP DLG-241] Creating pwd_f Frame...")
+        try:
+            pwd_f = tk.Frame(body, bg=WIN98_GRAY)
+            pwd_f.pack(fill=tk.X, pady=(4, 8))
+            _dlog("[STEP DLG-242] pwd_f packed.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-241] Failed pwd_f: {e}")
+            raise
 
-        tk.Label(
-            pwd_f,
-            text="Contrasenya:",
-            font=get_win98_font(9, bold=True),
-            fg=WIN98_BLACK,
-            bg=WIN98_GRAY,
-        ).pack(anchor=tk.W, pady=(0, 2))
+        _dlog("[STEP DLG-243] Creating 'Contrasenya:' Label...")
+        try:
+            font_pwd_lbl = get_win98_font(9, bold=True)
+            lbl_pwd = tk.Label(
+                pwd_f,
+                text="Contrasenya:",
+                font=font_pwd_lbl,
+                fg=WIN98_BLACK,
+                bg=WIN98_GRAY,
+            )
+            lbl_pwd.pack(anchor=tk.W, pady=(0, 2))
+            _dlog("[STEP DLG-244] 'Contrasenya:' Label packed.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-243] Failed 'Contrasenya:' Label: {e}")
 
-        pwd_var = tk.StringVar(master=dlg)
-        pwd_entry = create_win98_entry(
-            pwd_f,
-            textvariable=pwd_var,
-            show="*",
-            width=32,
-            font=get_win98_font(10),
-        )
-        pwd_entry.pack(fill=tk.X, ipady=2)
-        pwd_entry.focus_set()
+        _dlog("[STEP DLG-245] Creating pwd_var and Entry...")
+        try:
+            pwd_var = tk.StringVar(master=dlg)
+            font_entry = get_win98_font(10)
+            _dlog(f"[STEP DLG-246] Entry font: {font_entry}. Calling create_win98_entry...")
+            pwd_entry = create_win98_entry(
+                pwd_f,
+                textvariable=pwd_var,
+                show="*",
+                width=32,
+                font=font_entry,
+            )
+            _dlog(f"[STEP DLG-247] Entry created: {pwd_entry}. Packing...")
+            pwd_entry.pack(fill=tk.X, ipady=2)
+            _dlog("[STEP DLG-248] Entry packed. Setting focus...")
+            pwd_entry.focus_set()
+            _dlog("[STEP DLG-249] Entry focus_set() completed.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-245] Failed Entry creation/focus: {e}")
+            raise
 
         # Status / Offline indicator (sunken pane)
-        status_pane = tk.Frame(body, relief=tk.SUNKEN, bd=1, bg=WIN98_GRAY, padx=6, pady=3)
-        status_pane.pack(fill=tk.X, pady=(0, 8))
+        _dlog("[STEP DLG-250] Creating status_pane Frame...")
+        try:
+            status_pane = tk.Frame(body, relief=tk.SUNKEN, bd=1, bg=WIN98_GRAY, padx=6, pady=3)
+            status_pane.pack(fill=tk.X, pady=(0, 8))
+            _dlog("[STEP DLG-251] status_pane packed.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-250] Failed status_pane: {e}")
+            raise
 
-        initial_hint = (
-            "ℹ️ Mode autònom actiu (Sense dimoni de fons)"
-            if getattr(self.vm.client, "is_in_process", False)
-            else ("⚠️ Dimoni agent fora de línia." if is_offline else "A punt per a l'autenticació.")
-        )
-        err_label = tk.Label(
-            status_pane,
-            text=initial_hint,
-            font=get_win98_font(8),
-            fg=WIN98_RED if is_offline else WIN98_BLACK,
-            bg=WIN98_GRAY,
-            anchor=tk.W,
-        )
-        err_label.pack(fill=tk.X)
+        _dlog("[STEP DLG-252] Creating err_label...")
+        try:
+            initial_hint = (
+                "ℹ️ Mode autònom actiu (Sense dimoni de fons)"
+                if getattr(self.vm.client, "is_in_process", False)
+                else ("⚠️ Dimoni agent fora de línia." if is_offline else "A punt per a l'autenticació.")
+            )
+            font_err = get_win98_font(8)
+            err_label = tk.Label(
+                status_pane,
+                text=initial_hint,
+                font=font_err,
+                fg=WIN98_RED if is_offline else WIN98_BLACK,
+                bg=WIN98_GRAY,
+                anchor=tk.W,
+            )
+            err_label.pack(fill=tk.X)
+            _dlog("[STEP DLG-253] err_label packed.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-252] Failed err_label: {e}")
+            raise
 
         # Action Buttons
-        btn_frame = tk.Frame(body, bg=WIN98_GRAY)
-        btn_frame.pack(anchor=tk.E)
+        _dlog("[STEP DLG-254] Creating btn_frame...")
+        try:
+            btn_frame = tk.Frame(body, bg=WIN98_GRAY)
+            btn_frame.pack(anchor=tk.E)
+            _dlog("[STEP DLG-255] btn_frame packed.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-254] Failed btn_frame: {e}")
+            raise
 
         def do_login() -> None:
-            pwd = pwd_entry.get() or pwd_var.get()
-            if not pwd:
-                err_label.config(text="La contrasenya no pot estar buida", fg=WIN98_RED)
-                return
+            _dlog("[STEP BTN-300] >>> do_login() triggered! (User clicked button or hit Return) <<<")
+            try:
+                _dlog("[STEP BTN-301] Reading password from pwd_entry / pwd_var...")
+                pwd = pwd_entry.get() or pwd_var.get()
+                _dlog(f"[STEP BTN-302] Password retrieved. Length = {len(pwd)}")
+                if not pwd:
+                    _dlog("[STEP BTN-303] Password is empty. Setting error prompt.")
+                    err_label.config(text="La contrasenya no pot estar buida", fg=WIN98_RED)
+                    return
 
-            success = self.vm.authenticate(pwd)
-            if success:
-                dlg.destroy()
-                self._show_dashboard()
-            else:
-                err_label.config(text=self.vm.error_message or "Autenticació fallida", fg=WIN98_RED)
+                _dlog("[STEP BTN-304] Calling self.vm.authenticate(pwd)...")
+                success = self.vm.authenticate(pwd)
+                _dlog(f"[STEP BTN-305] self.vm.authenticate result = {success}")
+                if success:
+                    _dlog("[STEP BTN-306] Authentication success! Destroying login dialog and opening dashboard...")
+                    dlg.destroy()
+                    self._show_dashboard()
+                    _dlog("[STEP BTN-307] Dashboard opened.")
+                else:
+                    _dlog(f"[STEP BTN-308] Authentication failed. Error message: {self.vm.error_message}")
+                    err_label.config(text=self.vm.error_message or "Autenticació fallida", fg=WIN98_RED)
+            except Exception as e:
+                _dlog(f"[ERROR BTN-300] Exception inside do_login: {e}")
+                _dlog(traceback.format_exc())
 
-        pwd_entry.bind("<Return>", lambda e: do_login())
-        dlg.bind("<Escape>", lambda e: on_dlg_close())
+        _dlog("[STEP DLG-256] Binding events (<Return>, <Escape>)...")
+        try:
+            pwd_entry.bind("<Return>", lambda e: do_login())
+            dlg.bind("<Escape>", lambda e: on_dlg_close())
+            _dlog("[STEP DLG-257] Key bindings bound.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-256] Failed key bindings: {e}")
 
-        create_win98_button(
-            btn_frame,
-            text=t("admin_login_button"),
-            command=do_login,
-            is_default=True,
-            padx=16,
-        ).pack(side=tk.LEFT, padx=6)
+        _dlog("[STEP DLG-258] Creating Login button via create_win98_button...")
+        try:
+            btn_login = create_win98_button(
+                btn_frame,
+                text=t("admin_login_button"),
+                command=do_login,
+                is_default=True,
+                padx=16,
+            )
+            _dlog(f"[STEP DLG-259] Login button created: {btn_login}. Packing...")
+            btn_login.pack(side=tk.LEFT, padx=6)
+            _dlog("[STEP DLG-260] Login button packed.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-258] Failed Login button: {e}")
+            raise
 
-        create_win98_button(
-            btn_frame,
-            text=t("admin_cancel_button"),
-            command=on_dlg_close,
-            is_default=False,
-            padx=12,
-        ).pack(side=tk.LEFT)
+        _dlog("[STEP DLG-261] Creating Cancel button via create_win98_button...")
+        try:
+            btn_cancel = create_win98_button(
+                btn_frame,
+                text=t("admin_cancel_button"),
+                command=on_dlg_close,
+                is_default=False,
+                padx=12,
+            )
+            _dlog(f"[STEP DLG-262] Cancel button created: {btn_cancel}. Packing...")
+            btn_cancel.pack(side=tk.LEFT)
+            _dlog("[STEP DLG-263] Cancel button packed.")
+        except Exception as e:
+            _dlog(f"[ERROR DLG-261] Failed Cancel button: {e}")
+            raise
 
-        _safe_modal_grab(dlg)
+        _dlog("[STEP DLG-264] Calling _safe_modal_grab(dlg)...")
+        try:
+            _safe_modal_grab(dlg)
+            _dlog("[STEP DLG-265] _safe_modal_grab called.")
+        except Exception as e:
+            _dlog(f"[WARN DLG-264] _safe_modal_grab raised: {e}")
+
+        _dlog("[STEP DLG-266] _show_login_dialog setup COMPLETE. Dialog is active and awaiting user input.")
 
     # ==========================================================================
     # Admin Dashboard Window (Windows 98 "System Properties" Style)
     # ==========================================================================
 
     def _show_dashboard(self) -> None:
-        self.window = tk.Toplevel(self.parent)
-        self.window.title(t("admin_title"))
-        self.window.geometry("920x640")
-        self.window.configure(bg=WIN98_GRAY)
-        self.window.attributes("-topmost", True)
+        _dlog("[STEP DASH-400] Entering _show_dashboard()...")
+        try:
+            self.window = tk.Toplevel(self.parent)
+            self.window.title(t("admin_title"))
+            self.window.geometry("920x640")
+            self.window.configure(bg=WIN98_GRAY)
+            _dlog("[STEP DASH-401] Dashboard window created, geometry set.")
+        except Exception as e:
+            _dlog(f"[ERROR DASH-400] Failed creating dashboard window: {e}")
+            raise
 
-        apply_win98_ttk_theme(self.window)
+        try:
+            _dlog("[STEP DASH-402] Setting dashboard topmost attribute...")
+            self.window.attributes("-topmost", True)
+            _dlog("[STEP DASH-403] Dashboard topmost set.")
+        except Exception as e:
+            _dlog(f"[WARN DASH-402] Dashboard attributes -topmost failed: {e}")
+
+        try:
+            _dlog("[STEP DASH-404] Applying TTK theme to dashboard window...")
+            apply_win98_ttk_theme(self.window)
+            _dlog("[STEP DASH-405] Dashboard TTK theme applied.")
+        except Exception as e:
+            _dlog(f"[WARN DASH-404] Failed apply_win98_ttk_theme: {e}")
 
         def on_dashboard_close() -> None:
             if self.window:
