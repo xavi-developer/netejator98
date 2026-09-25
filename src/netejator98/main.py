@@ -92,9 +92,28 @@ def main() -> None:
         action="store_true",
         help="Run without background daemon service (embedded in-process mode)",
     )
+    parser.add_argument(
+        "--check-deps",
+        action="store_true",
+        help="Verify all runtime dependencies (GUI and cryptography) are embedded and accessible",
+    )
 
     args = parser.parse_args()
     set_language(args.lang)
+
+    # Fast verification of embedded dependencies (used by build verification test)
+    if args.check_deps:
+        missing = []
+        for mod in ["nacl", "cryptography", "yaml", "tkinter", "tkinter.ttk"]:
+            try:
+                __import__(mod)
+            except Exception as e:
+                missing.append(f"{mod} ({e})")
+        if missing:
+            print(f"[FAIL] Missing bundled dependencies: {', '.join(missing)}", file=sys.stderr)
+            sys.exit(1)
+        print("[OK] All runtime dependencies (PyNaCl, Cryptography, PyYAML, Tkinter) verified.")
+        sys.exit(0)
 
     is_agent = args.agent or (args.command == "agent")
     is_admin = args.admin or (args.command == "admin")
@@ -219,6 +238,17 @@ def main() -> None:
             print("[Netejator98] Starting Kiosk User Interface...")
             app = create_kiosk_app(client)
             app.show()
+    except ModuleNotFoundError as e:
+        if "tkinter" in str(e).lower():
+            print(f"\n[Netejator98] Error: Graphical interface requires 'tkinter' (Tcl/Tk): {e}", file=sys.stderr)
+            print("If running from source, please install system Tkinter support on Linux:", file=sys.stderr)
+            print("  Ubuntu / Debian: sudo apt install -y python3-tk", file=sys.stderr)
+            print("  Fedora / RHEL:   sudo dnf install -y python3-tkinter", file=sys.stderr)
+            print("  Arch Linux:      sudo pacman -S tk\n", file=sys.stderr)
+            print("Or build/run the pre-built standalone release binary which bundles all dependencies.", file=sys.stderr)
+        else:
+            print(f"[Netejator98] Missing required module: {e}", file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
         print(f"[Netejator98] Error launching graphical interface: {e}", file=sys.stderr)
         print("[Netejator98] If you are in a headless environment without an X11/Wayland display, use CLI commands like 'netejator98 agent' or 'netejator98 verify-audit'.", file=sys.stderr)

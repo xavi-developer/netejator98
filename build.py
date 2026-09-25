@@ -49,6 +49,84 @@ def check_python_version() -> None:
         sys.exit(1)
 
 
+def ensure_build_dependencies(repo_root: Path) -> None:
+    """Ensure all required Python libraries and Tkinter are available.
+    If missing, automatically install them or request to install system dependencies.
+    """
+    system = platform.system().lower()
+
+    # 1. Check Python project packages (pip install -e .)
+    missing_modules = []
+    for mod, pkg in [("yaml", "PyYAML"), ("nacl", "PyNaCl"), ("cryptography", "cryptography")]:
+        try:
+            __import__(mod)
+        except ImportError:
+            missing_modules.append(pkg)
+
+    if missing_modules:
+        print(f"[*] Missing Python dependencies: {', '.join(missing_modules)}. Installing...")
+        is_venv = sys.prefix != sys.base_prefix
+        pip_cmd = [sys.executable, "-m", "pip", "install", "-e", str(repo_root)]
+        if not is_venv and system != "windows":
+            pip_cmd.append("--break-system-packages")
+        try:
+            subprocess.check_call(pip_cmd)
+            print("[OK] Project Python dependencies installed successfully.")
+        except subprocess.CalledProcessError:
+            fallback_cmd = [sys.executable, "-m", "pip", "install"] + missing_modules
+            if not is_venv and system != "windows":
+                fallback_cmd.append("--break-system-packages")
+            subprocess.check_call(fallback_cmd)
+
+    # 2. Check Tkinter (required to bundle the GUI in the standalone binary)
+    try:
+        import tkinter  # noqa: F401
+        print("[OK] Tkinter is available.")
+    except ImportError:
+        print("\n[!] 'tkinter' is missing from Python. The standalone release MUST bundle Tkinter.")
+        if system == "linux":
+            print("[*] Requesting to install 'python3-tk' via system package manager...")
+            installed = False
+            if shutil.which("apt-get"):
+                try:
+                    subprocess.check_call(["sudo", "apt-get", "update", "-qq"])
+                    subprocess.check_call(["sudo", "apt-get", "install", "-y", "python3-tk"])
+                    installed = True
+                except Exception as e:
+                    print(f"[!] Automatic installation with apt-get failed: {e}")
+            elif shutil.which("dnf"):
+                try:
+                    subprocess.check_call(["sudo", "dnf", "install", "-y", "python3-tkinter"])
+                    installed = True
+                except Exception as e:
+                    print(f"[!] Automatic installation with dnf failed: {e}")
+            elif shutil.which("pacman"):
+                try:
+                    subprocess.check_call(["sudo", "pacman", "-S", "--noconfirm", "tk"])
+                    installed = True
+                except Exception as e:
+                    print(f"[!] Automatic installation with pacman failed: {e}")
+
+            if installed:
+                try:
+                    import tkinter  # noqa: F401
+                    print("[OK] Tkinter installed and verified successfully.")
+                    return
+                except ImportError:
+                    pass
+
+            print("\nError: 'tkinter' could not be installed automatically.", file=sys.stderr)
+            print("The release cannot be built without Tkinter because all GUI dependencies must be bundled.", file=sys.stderr)
+            print("Please run one of the following commands and re-run build.py:", file=sys.stderr)
+            print("  Ubuntu / Debian: sudo apt update && sudo apt install -y python3-tk", file=sys.stderr)
+            print("  Fedora / RHEL:   sudo dnf install -y python3-tkinter", file=sys.stderr)
+            print("  Arch Linux:      sudo pacman -S tk\n", file=sys.stderr)
+            sys.exit(1)
+        else:
+            print("Error: Tkinter is required to build the release. Please install Tcl/Tk support for your Python.", file=sys.stderr)
+            sys.exit(1)
+
+
 def ensure_pyinstaller() -> None:
     try:
         import PyInstaller  # noqa: F401
@@ -119,9 +197,10 @@ def build_executable(repo_root: Path, clean: bool = False, test: bool = True) ->
     size_mb = output_binary.stat().st_size / (1024 * 1024)
     print_banner(f"Build Succeeded! Binary: {output_binary} ({size_mb:.2f} MB)")
 
-    # Verification smoke test
+    # Verification smoke tests
     if test:
-        print("[*] Running verification test (--help)...")
+        print("[*] Running verification tests on built executable...")
+        # 1. Test basic startup and help
         try:
             smoke_proc = subprocess.run(
                 [str(output_binary), "--help"],
@@ -130,14 +209,36 @@ def build_executable(repo_root: Path, clean: bool = False, test: bool = True) ->
                 text=True,
                 timeout=15,
             )
-            if smoke_proc.returncode == 0:
-                print("[OK] Binary self-test passed: executable runs and displays help successfully!")
-            else:
-                print(f"[!] Warning: Binary exited with code {smoke_proc.returncode}")
+            if smoke_proc.returncode != 0:
+                print(f"[!] Error: Binary --help self-test failed with code {smoke_proc.returncode}", file=sys.stderr)
                 if smoke_proc.stderr:
-                    print(smoke_proc.stderr)
+                    print(smoke_proc.stderr, file=sys.stderr)
+                sys.exit(1)
         except Exception as e:
-            print(f"[!] Smoke test could not be completed: {e}")
+            print(f"[!] Smoke test could not be completed: {e}", file=sys.stderr)
+            sys.exit(1)
+
+        # 2. Test that ALL dependencies (Tkinter, PyNaCl, Cryptography, PyYAML) are bundled
+        print("[*] Verifying all runtime dependencies are embedded in the binary...")
+        try:
+            dep_proc = subprocess.run(
+                [str(output_binary), "--check-deps"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=15,
+            )
+            if dep_proc.returncode == 0:
+                print(f"[OK] Binary self-test passed: {dep_proc.stdout.strip()}")
+            else:
+                print("[!] Error: Standalone binary is missing required bundled dependencies!", file=sys.stderr)
+                if dep_proc.stderr:
+                    print(dep_proc.stderr, file=sys.stderr)
+                print("The release build cannot proceed with missing dependencies.", file=sys.stderr)
+                sys.exit(1)
+        except Exception as e:
+            print(f"[!] Dependency check could not be completed: {e}", file=sys.stderr)
+            sys.exit(1)
 
     return output_binary
 
@@ -161,6 +262,7 @@ def main() -> None:
     repo_root = Path(__file__).resolve().parent
 
     check_python_version()
+    ensure_build_dependencies(repo_root)
     ensure_pyinstaller()
     output_binary = build_executable(repo_root, clean=args.clean, test=not args.no_test)
 
