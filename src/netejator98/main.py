@@ -223,16 +223,21 @@ def main() -> None:
         sys.exit(0)
 
     # 4. GUI Client modes
+    print(f"[DEBUG-MAIN] Initializing GUI client. is_admin={is_admin}, standalone={args.standalone}, lang={args.lang}", flush=True)
     client = create_client(storage_dir=args.storage_dir, socket_path=args.socket, port=args.port)
     if args.standalone:
+        print("[DEBUG-MAIN] Standalone mode: forcing in-process client (socket_path=None, port=None)", flush=True)
         client.socket_path = None
         client.port = None
 
     try:
         if is_admin:
-            print("[Netejator98] Starting Administration Dashboard...")
+            print("[Netejator98] Starting Administration Dashboard...", flush=True)
+            print("[DEBUG-MAIN] Calling create_admin_app(client)...", flush=True)
             app = create_admin_app(client)
+            print("[DEBUG-MAIN] create_admin_app returned successfully. Now calling app.show()...", flush=True)
             app.show()
+            print("[DEBUG-MAIN] app.show() exited.", flush=True)
         else:
             # Default: Kiosk prompt
             print("[Netejator98] Starting Kiosk User Interface...")
