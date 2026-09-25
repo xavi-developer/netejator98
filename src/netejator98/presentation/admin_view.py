@@ -599,28 +599,42 @@ class AdminView:
             {"name": "insestatut.cat", "url": "https://insestatut.cat"}
         ]
 
+        _dlog("[STEP DASH-406] Creating ttk.Notebook...")
         self.notebook = ttk.Notebook(content_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True)
+        _dlog("[STEP DASH-407] ttk.Notebook created and packed.")
 
         # Tab 1: Audit Log
+        _dlog("[STEP DASH-408] Building Tab 1: Audit Log frame...")
         log_frame = tk.Frame(self.notebook, bg=WIN98_GRAY, padx=6, pady=6)
         self.notebook.add(log_frame, text=f"  {t('admin_tab_logs')}  ")
+        _dlog("[STEP DASH-409] Calling _build_audit_tab(log_frame)...")
         self._build_audit_tab(log_frame)
+        _dlog("[STEP DASH-410] Tab 1: Audit Log built successfully.")
 
         # Tab 2: Cleaning Policy
+        _dlog("[STEP DASH-411] Building Tab 2: Cleaning Policy frame...")
         policy_frame = tk.Frame(self.notebook, bg=WIN98_GRAY, padx=6, pady=6)
         self.notebook.add(policy_frame, text=f"  {t('admin_tab_policy')}  ")
+        _dlog("[STEP DASH-412] Calling _build_policy_tab(policy_frame)...")
         self._build_policy_tab(policy_frame)
+        _dlog("[STEP DASH-413] Tab 2: Cleaning Policy built successfully.")
 
         # Tab 3: Golden Profile
+        _dlog("[STEP DASH-414] Building Tab 3: Golden Profile frame...")
         golden_frame = tk.Frame(self.notebook, bg=WIN98_GRAY, padx=6, pady=6)
         self.notebook.add(golden_frame, text=f"  {t('admin_tab_golden')}  ")
+        _dlog("[STEP DASH-415] Calling _build_golden_tab(golden_frame)...")
         self._build_golden_tab(golden_frame)
+        _dlog("[STEP DASH-416] Tab 3: Golden Profile built successfully.")
 
         # Tab 4: Maintenance
+        _dlog("[STEP DASH-417] Building Tab 4: Maintenance frame...")
         maint_frame = tk.Frame(self.notebook, bg=WIN98_GRAY, padx=6, pady=6)
         self.notebook.add(maint_frame, text=f"  {t('admin_tab_maintenance')}  ")
+        _dlog("[STEP DASH-418] Calling _build_maintenance_tab(maint_frame)...")
         self._build_maintenance_tab(maint_frame)
+        _dlog("[STEP DASH-419] Tab 4: Maintenance built successfully.")
 
         tab_entries = [
             (log_frame, t("admin_tab_logs")),
@@ -639,13 +653,14 @@ class AdminView:
                         self.notebook.tab(idx, text=f"  ▶ {title}  ")
                     else:
                         self.notebook.tab(idx, text=f"    {title}    ")
-            except Exception:
-                pass
+            except Exception as e:
+                _dlog(f"[WARN DASH] update_active_tab_highlight error: {e}")
 
         self.notebook.bind("<<NotebookTabChanged>>", update_active_tab_highlight)
         update_active_tab_highlight()
 
         # Bottom Property Sheet Control Bar (D'acord, Cancel·la, Aplica)
+        _dlog("[STEP DASH-420] Creating bottom property sheet control bar...")
         bottom_bar = tk.Frame(main_frame, bg=WIN98_GRAY, padx=10, pady=8)
         bottom_bar.pack(fill=tk.X)
 
@@ -660,6 +675,7 @@ class AdminView:
         create_win98_button(bottom_bar, text="D'acord", command=do_ok, is_default=True, padx=16).pack(side=tk.RIGHT, padx=4)
         create_win98_button(bottom_bar, text="Cancel·la", command=on_dashboard_close, is_default=False, padx=14).pack(side=tk.RIGHT, padx=4)
         create_win98_button(bottom_bar, text="Aplica", command=do_apply, is_default=False, padx=14).pack(side=tk.RIGHT, padx=4)
+        _dlog("[STEP DASH-421] Dashboard initialization complete. Window displayed.")
 
     def _show_about_dialog(self) -> None:
         dlg = tk.Toplevel(self.window)
@@ -709,8 +725,10 @@ class AdminView:
     # --------------------------------------------------------------------------
 
     def _build_audit_tab(self, parent: tk.Frame) -> None:
+        _dlog("[STEP AUDIT-500] Entering _build_audit_tab()...")
         toolbar = tk.Frame(parent, bg=WIN98_GRAY, pady=6)
         toolbar.pack(fill=tk.X)
+        _dlog("[STEP AUDIT-501] Toolbar packed.")
 
         create_win98_button(
             toolbar,
@@ -718,6 +736,7 @@ class AdminView:
             command=self._refresh_logs,
             padx=10,
         ).pack(side=tk.LEFT, padx=4)
+        _dlog("[STEP AUDIT-502] 'Refrescar' button packed.")
 
         create_win98_button(
             toolbar,
@@ -725,6 +744,7 @@ class AdminView:
             command=self._verify_chain,
             padx=10,
         ).pack(side=tk.LEFT, padx=4)
+        _dlog("[STEP AUDIT-503] 'Verificar' button packed.")
 
         create_win98_button(
             toolbar,
@@ -732,32 +752,49 @@ class AdminView:
             command=self._export_csv,
             padx=10,
         ).pack(side=tk.LEFT, padx=4)
+        _dlog("[STEP AUDIT-504] 'Exportar' button packed.")
 
+        _dlog("[STEP AUDIT-505] Creating tree_frame for Audit Log...")
         tree_frame = tk.Frame(parent, bg=WIN98_GRAY, relief=tk.SUNKEN, bd=2)
         tree_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+        _dlog("[STEP AUDIT-506] tree_frame created and packed.")
 
         columns = ("seq", "timestamp", "event", "email", "outcome", "targets")
-        self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=15)
+        _dlog("[STEP AUDIT-507] Instantiating ttk.Treeview...")
+        try:
+            self.tree = ttk.Treeview(tree_frame, columns=columns, show="headings", height=15)
+            _dlog(f"[STEP AUDIT-508] ttk.Treeview instantiated: {self.tree}")
+        except Exception as e:
+            _dlog(f"[ERROR AUDIT-507] Failed instantiating ttk.Treeview: {e}")
+            raise
+
+        _dlog("[STEP AUDIT-509] Setting headings on ttk.Treeview...")
         self.tree.heading("seq", text="#")
         self.tree.heading("timestamp", text="Data/Hora (UTC)")
         self.tree.heading("event", text="Esdeveniment")
         self.tree.heading("email", text="Usuari")
         self.tree.heading("outcome", text="Resultat")
         self.tree.heading("targets", text="Objectius Netejats")
+        _dlog("[STEP AUDIT-510] Headings set.")
 
+        _dlog("[STEP AUDIT-511] Setting columns on ttk.Treeview...")
         self.tree.column("seq", width=40, anchor=tk.CENTER)
         self.tree.column("timestamp", width=160)
         self.tree.column("event", width=160)
         self.tree.column("email", width=180)
         self.tree.column("outcome", width=90, anchor=tk.CENTER)
         self.tree.column("targets", width=240)
+        _dlog("[STEP AUDIT-512] Columns set.")
 
+        _dlog("[STEP AUDIT-513] Creating scrollbar...")
         scrollbar = ttk.Scrollbar(tree_frame, orient=tk.VERTICAL, command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        _dlog("[STEP AUDIT-514] Scrollbar and Treeview packed.")
 
         # Multi-pane Windows 98 Status Bar
+        _dlog("[STEP AUDIT-515] Creating Win98StatusBar...")
         self.audit_status_bar = Win98StatusBar(
             parent,
             panes=[
@@ -767,28 +804,58 @@ class AdminView:
             ],
         )
         self.audit_status_bar.pack(fill=tk.X, pady=(2, 0))
+        _dlog("[STEP AUDIT-516] Win98StatusBar created and packed.")
 
+        _dlog("[STEP AUDIT-517] Triggering initial self._refresh_logs()...")
         self._refresh_logs()
+        _dlog("[STEP AUDIT-518] _build_audit_tab() completed.")
 
     def _refresh_logs(self) -> None:
-        self.tree.delete(*self.tree.get_children())
-        entries = self.vm.fetch_logs()
-        for i, e in enumerate(entries, start=1):
-            targets_str = ", ".join(e.get("targets_cleaned", []))
-            self.tree.insert(
-                "",
-                tk.END,
-                values=(
-                    i,
-                    e.get("timestamp", "")[:19].replace("T", " "),
-                    e.get("event_type", ""),
-                    e.get("email") or "(anònim/agent)",
-                    e.get("outcome", ""),
-                    targets_str,
-                ),
-            )
+        _dlog("[STEP REFRESH-600] Entering _refresh_logs()...")
+        try:
+            children = self.tree.get_children()
+            _dlog(f"[STEP REFRESH-601] Existing tree children: {len(children)}")
+            for item in children:
+                self.tree.delete(item)
+            _dlog("[STEP REFRESH-602] Existing items deleted safely.")
+        except Exception as e:
+            _dlog(f"[WARN REFRESH-601] Error clearing tree children: {e}")
+
+        _dlog("[STEP REFRESH-603] Querying self.vm.fetch_logs()...")
+        try:
+            entries = self.vm.fetch_logs()
+            _dlog(f"[STEP REFRESH-604] self.vm.fetch_logs() returned {len(entries)} entries.")
+        except Exception as e:
+            _dlog(f"[ERROR REFRESH-603] Exception in self.vm.fetch_logs(): {e}")
+            entries = []
+
+        _dlog(f"[STEP REFRESH-605] Inserting {len(entries)} entries into tree...")
+        try:
+            for i, e in enumerate(entries, start=1):
+                targets_str = ", ".join(e.get("targets_cleaned", []))
+                self.tree.insert(
+                    "",
+                    tk.END,
+                    values=(
+                        i,
+                        e.get("timestamp", "")[:19].replace("T", " "),
+                        e.get("event_type", ""),
+                        e.get("email") or "(anònim/agent)",
+                        e.get("outcome", ""),
+                        targets_str,
+                    ),
+                )
+            _dlog("[STEP REFRESH-606] Treeview items inserted successfully.")
+        except Exception as e:
+            _dlog(f"[ERROR REFRESH-605] Failed inserting entries into treeview: {e}")
+
         if hasattr(self, "audit_status_bar"):
-            self.audit_status_bar.set_pane_text(0, f"Total entrades carregades: {len(entries)}")
+            try:
+                self.audit_status_bar.set_pane_text(0, f"Total entrades carregades: {len(entries)}")
+                _dlog("[STEP REFRESH-607] Status bar pane 0 updated.")
+            except Exception as e:
+                _dlog(f"[WARN REFRESH-607] Failed updating status bar: {e}")
+        _dlog("[STEP REFRESH-608] _refresh_logs() finished.")
 
     def _verify_chain(self) -> None:
         res = self.vm.verify_chain()
@@ -827,6 +894,7 @@ class AdminView:
     # --------------------------------------------------------------------------
 
     def _build_policy_tab(self, parent: tk.Frame) -> None:
+        _dlog("[STEP POLICY-700] Entering _build_policy_tab()...")
         self.targets_list: list[dict[str, Any]] = []
         self._current_policy_raw: dict[str, Any] = {}
 
@@ -1309,7 +1377,13 @@ class AdminView:
 
         # 5. Core Policy Load
         def load_policy_data() -> None:
-            policy_data = self.vm.fetch_policy()
+            _dlog("[STEP POLICY-750] Entering load_policy_data()...")
+            try:
+                policy_data = self.vm.fetch_policy()
+                _dlog(f"[STEP POLICY-751] fetch_policy returned {len(policy_data)} keys.")
+            except Exception as e:
+                _dlog(f"[ERROR POLICY-750] fetch_policy exception: {e}")
+                policy_data = {}
             self._current_policy_raw = policy_data
             self.policy_dry_run_var.set(policy_data.get("dry_run", True))
             self.policy_clean_boot_var.set(policy_data.get("always_clean_on_boot", False))
@@ -1326,11 +1400,14 @@ class AdminView:
                 self._refresh_golden_tree()
 
             self.targets_list = copy.deepcopy(policy_data.get("targets", []))
+            _dlog(f"[STEP POLICY-752] Refreshing policy tree with {len(self.targets_list)} targets...")
             refresh_policy_tree()
+            _dlog("[STEP POLICY-753] Policy tree refreshed successfully.")
 
         self._load_policy_data = load_policy_data
 
         load_policy_data()
+        _dlog("[STEP POLICY-754] _build_policy_tab completed.")
 
     def _dry_run(self) -> None:
         res = self.vm.force_clean()
@@ -1350,6 +1427,7 @@ class AdminView:
     # --------------------------------------------------------------------------
 
     def _build_golden_tab(self, parent: tk.Frame) -> None:
+        _dlog("[STEP GOLDEN-800] Entering _build_golden_tab()...")
         container = tk.Frame(parent, bg=WIN98_GRAY, padx=12, pady=10)
         container.pack(fill=tk.BOTH, expand=True)
 
@@ -1538,12 +1616,14 @@ class AdminView:
         self.golden_tree.bind("<Double-1>", lambda e: open_shortcut_editor(get_selected_shortcut_index()))
 
         refresh_golden_tree()
+        _dlog("[STEP GOLDEN-801] _build_golden_tab completed.")
 
     # --------------------------------------------------------------------------
     # Tab 4: Maintenance
     # --------------------------------------------------------------------------
 
     def _build_maintenance_tab(self, parent: tk.Frame) -> None:
+        _dlog("[STEP MAINT-900] Entering _build_maintenance_tab()...")
         container = tk.Frame(parent, bg=WIN98_GRAY, padx=12, pady=12)
         container.pack(fill=tk.BOTH, expand=True)
 
@@ -1639,6 +1719,7 @@ class AdminView:
             padx=12,
             pady=3,
         ).grid(row=2, column=1, sticky=tk.W, pady=8, padx=10)
+        _dlog("[STEP MAINT-901] _build_maintenance_tab completed.")
 
     def _force_clean_action(self) -> None:
         confirm = messagebox.askyesno(
