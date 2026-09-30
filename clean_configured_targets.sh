@@ -41,7 +41,7 @@ read -r -d '' OBJECTIVES_JSON << 'EOF' || true
       "Pictures/*",
       "Videos/*",
       "Music/*",
-      "/*.*
+      "/*.*"
     ]
   },
   {
