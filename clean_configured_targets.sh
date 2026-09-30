@@ -34,11 +34,14 @@ read -r -d '' OBJECTIVES_JSON << 'EOF' || true
     "strategy": "PURGE_CHILDREN",
     "patterns": [
       "Desktop/*",
+      "Escriptori/*",
       "Documents/*",
+      "Baixades/*",
       "Downloads/*",
       "Pictures/*",
       "Videos/*",
-      "Music/*"
+      "Music/*",
+      "/*.*
     ]
   },
   {
