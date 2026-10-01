@@ -35,12 +35,26 @@ read -r -d '' OBJECTIVES_JSON << 'EOF' || true
     "patterns": [
       "Desktop/*",
       "Escriptori/*",
+      "Escritorio/*",
       "Documents/*",
+      "Documentos/*",
       "Baixades/*",
+      "Descàrregues/*",
+      "Descargas/*",
       "Downloads/*",
       "Pictures/*",
+      "Imatges/*",
+      "Imágenes/*",
       "Videos/*",
-      "Music/*"
+      "Vídeos/*",
+      "Music/*",
+      "Música/*",
+      "Templates/*",
+      "Plantilles/*",
+      "Plantillas/*",
+      "Public/*",
+      "Públic/*",
+      "Público/*"
     ]
   },
   {
@@ -51,7 +65,9 @@ read -r -d '' OBJECTIVES_JSON << 'EOF' || true
     "enabled": false,
     "strategy": "STANDARD",
     "patterns": [
-      "Desktop/*.desktop"
+      "Desktop/*.desktop",
+      "Escriptori/*.desktop",
+      "Escritorio/*.desktop"
     ]
   },
   {
@@ -1061,6 +1077,7 @@ is_protected_path() {
 execute_cleanup_item() {
     local path="$1"
     local strategy="$2"
+    local is_child="${3:-false}"
 
     # Comprovació de seguretat
     if is_protected_path "$path"; then
@@ -1079,8 +1096,12 @@ execute_cleanup_item() {
         return 0
     fi
 
-    # Desbloquejar atributs de només lectura si fos necessari
-    chmod u+w "$path" 2>/dev/null || true
+    # Desbloquejar atributs de només lectura si fos necessari (recursivament per a directoris)
+    if [[ -d "$path" && ! -L "$path" ]]; then
+        chmod -R u+w "$path" 2>/dev/null || true
+    else
+        chmod u+w "$path" 2>/dev/null || true
+    fi
 
     case "$strategy" in
         TRUNCATE)
@@ -1091,7 +1112,13 @@ execute_cleanup_item() {
             fi
             ;;
         PURGE_CHILDREN)
-            if [[ -d "$path" && ! -L "$path" ]]; then
+            if [[ "$is_child" == "true" ]]; then
+                # Quan l'element és fill fruit d'una expansió de patró (p. ex. Documents/*),
+                # la carpeta, subcarpeta o fitxer s'ha d'eliminar completament.
+                rm -rf "$path" 2>/dev/null || true
+            elif [[ -d "$path" && ! -L "$path" ]]; then
+                # Quan és el directori arrel mateix (p. ex. Documents), se'n buida el contingut
+                # conservant l'estructura de la carpeta pare.
                 find "$path" -mindepth 1 -maxdepth 1 -exec rm -rf {} + 2>/dev/null || true
             else
                 rm -rf "$path" 2>/dev/null || true
@@ -1196,9 +1223,19 @@ while IFS=$'\t' read -r name target_os category strategy desc pattern; do
     fi
     IFS="$OLD_IFS"
 
+    # Si el patró apunta a fills d'un directori (acaba en /* o /*.*) o
+    # pertany a USER_DOCUMENTS amb comodí:
+    # Les coincidències són elements fills continguts dins de la carpeta pare.
+    # Per tant, cadascun d'aquests elements (incloent carpetes i subcarpetes)
+    # s'ha d'eliminar completament preservant la carpeta contenidora mare.
+    is_child=false
+    if [[ "$pattern" == *"/*" || "$pattern" == *"/*."* || ( "$category" == "USER_DOCUMENTS" && "$pattern" == *"*"* ) ]]; then
+        is_child=true
+    fi
+
     for m in "${matches[@]}"; do
         if [[ -e "$m" || -L "$m" ]]; then
-            if execute_cleanup_item "$m" "$strategy"; then
+            if execute_cleanup_item "$m" "$strategy" "$is_child"; then
                 ((OBJ_ITEMS_COUNT++))
                 ((TOTAL_ITEMS_CLEANED++))
             fi
