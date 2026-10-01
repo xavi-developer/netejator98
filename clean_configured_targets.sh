@@ -33,6 +33,7 @@ read -r -d '' OBJECTIVES_JSON << 'EOF' || true
     "enabled": false,
     "strategy": "PURGE_CHILDREN",
     "patterns": [
+      "*",
       "Desktop/*",
       "Escriptori/*",
       "Escritorio/*",
@@ -371,6 +372,7 @@ read -r -d '' OBJECTIVES_JSON << 'EOF' || true
     "enabled": false,
     "strategy": "PURGE_CHILDREN",
     "patterns": [
+      "*",
       "Desktop/*",
       "Documents/*",
       "Downloads/*",
@@ -660,6 +662,7 @@ read -r -d '' OBJECTIVES_JSON << 'EOF' || true
     "enabled": false,
     "strategy": "PURGE_CHILDREN",
     "patterns": [
+      "*",
       "Desktop/*",
       "Documents/*",
       "Downloads/*",
@@ -1036,6 +1039,42 @@ count_total_objectives() {
 # ==============================================================================
 # SEGURETAT: RUTES PROTEGIDES (INVARIANTS DE SEGURETAT)
 # ==============================================================================
+is_protected_home_file() {
+    local candidate="$1"
+    local bname="${candidate##*/}"
+    case "$bname" in
+        # Shell startup i configuració POSIX/Bash/Zsh
+        .bashrc|.profile|.bash_profile|.bash_login|.bash_logout)
+            return 0
+            ;;
+        .zshrc|.zprofile|.zshenv|.zlogin)
+            return 0
+            ;;
+        # Configuració d'entorn gràfic i sessió X11/Wayland/Desktop
+        .inputrc|.xsession|.xsessionrc|.xprofile|.Xauthority|.ICEauthority|.dmrc)
+            return 0
+            ;;
+        .face|.face.icon|.gtkrc*|.pam_environment)
+            return 0
+            ;;
+        # Fitxers de sistema Windows / macOS
+        NTUSER.DAT*|ntuser.dat*|ntuser.ini|desktop.ini|.CFUserTextEncoding)
+            return 0
+            ;;
+        # Historials gestionats específicament per l'estratègia TRUNCATE
+        .bash_history|.zsh_history|.python_history)
+            return 0
+            ;;
+        # Credencials gestionades específicament per SHRED_NIST
+        .git-credentials|.netrc|_netrc)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
 is_protected_path() {
     local candidate="$1"
     # Normalitzar ruta candidata
@@ -1067,6 +1106,15 @@ is_protected_path() {
             return 0
         fi
     done
+
+    # Protegir fitxers crítics de l'entorn d'usuari directament al HOME
+    local cand_parent
+    cand_parent="$(dirname "$candidate")"
+    if [[ "$cand_parent" == "$TARGET_HOME" ]]; then
+        if is_protected_home_file "$candidate"; then
+            return 0
+        fi
+    fi
 
     return 1
 }
@@ -1235,6 +1283,19 @@ while IFS=$'\t' read -r name target_os category strategy desc pattern; do
 
     for m in "${matches[@]}"; do
         if [[ -e "$m" || -L "$m" ]]; then
+            # Quan el patró és '*' directament a l'arrel del directori d'usuari:
+            # - Només s'eliminen els fitxers solts (com ara /home/alum/image.png)
+            # - Mai s'eliminen les carpetes arrel (Desktop, Documents, .config, etc.)
+            # - Mai s'eliminen fitxers protegits del sistema (.bashrc, .profile, etc.)
+            if [[ "$pattern" == "*" ]]; then
+                if [[ -d "$m" && ! -L "$m" ]]; then
+                    continue
+                fi
+                if is_protected_home_file "$m"; then
+                    continue
+                fi
+            fi
+
             if execute_cleanup_item "$m" "$strategy" "$is_child"; then
                 ((OBJ_ITEMS_COUNT++))
                 ((TOTAL_ITEMS_CLEANED++))
