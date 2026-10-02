@@ -1,4 +1,10 @@
-# 2>NUL & @cls & @echo off & powershell -NoProfile -ExecutionPolicy Bypass -Command "iex ((Get-Content '%~f0' | Select-Object -Skip 1) -join [Environment]::NewLine)" & pause & exit /b
+<# :
+@echo off
+set "bat_path=%~f0"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-Command -ScriptBlock ([scriptblock]::Create([System.IO.File]::ReadAllText($env:bat_path)))"
+pause
+exit /b
+#>
 
 # ==============================================================================
 # CONFIGURACIO DE L'EXECUCIO
