@@ -1,9 +1,9 @@
-# 2>NUL & @cls & @echo off & powershell -NoProfile -ExecutionPolicy Bypass -Command "iex ((Get-Content \"%~f0\" | Select-Object -Skip 1) -join [Environment]::NewLine)" & pause & exit /b
+# 2>NUL & @cls & @echo off & powershell -NoProfile -ExecutionPolicy Bypass -Command "iex ((Get-Content '%~f0' | Select-Object -Skip 1) -join [Environment]::NewLine)" & pause & exit /b
 
 # ==============================================================================
-# CONFIGURACIÓ DE L'EXECUCIÓ
+# CONFIGURACIO DE L'EXECUCIO
 # ==============================================================================
-$DryRun = $false          # Canvia a $true per fer una simulació sense esborrar res
+$DryRun = $false          # Canvia a $true per fer una simulacio sense esborrar res
 $VerboseMode = $true      # Canvia a $false si no vols veure la llista de fitxers
 $TargetHome = $HOME
 
@@ -65,7 +65,7 @@ function Invoke-CleanupItem {
         return $true
     }
 
-    # Desbloquejar atributs de només lectura
+    # Desbloquejar atributs de nomes lectura
     if (Test-Path $ItemPath) {
         Set-ItemProperty $ItemPath -Name IsReadOnly -Value$false -ErrorAction SilentlyContinue
     }
@@ -101,16 +101,16 @@ function Invoke-CleanupItem {
 }
 
 # ==============================================================================
-# BUCLE PRINCIPAL D'EXECUCIÓ
+# BUCLE PRINCIPAL D'EXECUCIO
 # ==============================================================================
 $Objectives =$ObjectivesJson | ConvertFrom-Json
 $TotalObjectives =$Objectives.Count
 
 Write-Host "=============================================================================="
-Write-Host " Netejator98 — Execució dels Objectius de Neteja"
+Write-Host " Netejator98 - Execucio dels Objectius de Neteja"
 Write-Host "=============================================================================="
-Write-Host " Directori destí: $TargetHome"
-if ($DryRun) { Write-Host " Mode: SIMULACIÓ (Dry-run — Cap fitxer serà modificat)" -ForegroundColor Cyan }
+Write-Host " Directori desti: $TargetHome"
+if ($DryRun) { Write-Host " Mode: SIMULACIO (Dry-run - Cap fitxer sera modificat)" -ForegroundColor Cyan }
 else { Write-Host " Mode: REAL (Els elements seran netejats)" -ForegroundColor Red }
 Write-Host "==============================================================================`n"
 
@@ -133,7 +133,7 @@ foreach ($Obj in $Objectives) {
         foreach ($Match in $Matches) {
             $MatchPath = $Match.FullName
             
-            # Seguretat per al patró "*" al directori arrel (no esborrar carpetes arrel)
+            # Seguretat per al patro "*" al directori arrel (no esborrar carpetes arrel)
             if ($Pattern -eq "*" -and (Test-Path $MatchPath -PathType Container)) { continue }
 
             if (Invoke-CleanupItem -ItemPath $MatchPath -Strategy $Obj.strategy) {
